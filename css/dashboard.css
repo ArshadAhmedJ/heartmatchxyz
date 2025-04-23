@@ -1602,3 +1602,111 @@
     gap: 0.75rem;
   }
 }
+
+/* Add these styles for the mobile chat UI */
+@media (max-width: 768px) {
+  /* Mobile chat styles */
+  .mobile-chat-view .chat-container {
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .mobile-chat-view .conversations-sidebar {
+    width: 100%;
+    height: 100%;
+    border-right: none;
+  }
+
+  .mobile-chat-view .chat-main {
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+
+  .mobile-chat-back {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-chat-back:hover {
+    color: #ff6b6b;
+  }
+
+  /* Improve chat header for mobile */
+  .mobile-chat-view .chat-header {
+    padding: 0.75rem;
+  }
+
+  .mobile-chat-view .chat-header-user h3 {
+    font-size: 1rem;
+  }
+
+  .mobile-chat-view .chat-header-photo {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Improve message input for mobile */
+  .mobile-chat-view .message-input-container {
+    padding: 0.75rem;
+  }
+
+  .mobile-chat-view .message-input {
+    font-size: 0.9rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .mobile-chat-view .send-message-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Improve conversation items for mobile */
+  .mobile-chat-view .conversation-item {
+    padding: 0.75rem;
+  }
+
+  .mobile-chat-view .conversation-photo {
+    width: 45px;
+    height: 45px;
+  }
+
+  .mobile-chat-view .conversation-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .mobile-chat-view .conversation-preview p {
+    font-size: 0.8rem;
+  }
+
+  /* Improve messages for mobile */
+  .mobile-chat-view .message-content {
+    padding: 0.6rem 0.8rem;
+  }
+
+  .mobile-chat-view .message-time {
+    font-size: 0.65rem;
+  }
+
+  .mobile-chat-view .date-separator {
+    margin: 0.75rem 0;
+    text-align: center;
+  }
+
+  .mobile-chat-view .date-separator span {
+    font-size: 0.75rem;
+    color: #888;
+    background-color: #f9f9f9;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+  }
+}

@@ -15,6 +15,7 @@ const chatModule = (() => {
   let currentOtherUserId = null
   let messagesListener = null
   const conversationsListener = null
+  let isMobileView = false
 
   // Initialize chat module
   const init = () => {
@@ -44,6 +45,12 @@ const chatModule = (() => {
       return
     }
 
+    // Check if we're on mobile
+    checkMobileView()
+
+    // Add resize listener to check for mobile view
+    window.addEventListener("resize", checkMobileView)
+
     // Add auth state listener
     auth.onAuthStateChanged((user) => {
       if (user) {
@@ -58,6 +65,88 @@ const chatModule = (() => {
     })
 
     console.log("Chat module initialized")
+  }
+
+  // Check if we're in mobile view
+  const checkMobileView = () => {
+    const wasMobile = isMobileView
+    isMobileView = window.innerWidth < 768
+
+    // If we've switched between mobile and desktop, update the UI
+    if (wasMobile !== isMobileView) {
+      updateChatLayout()
+    }
+  }
+
+  // Update chat layout based on mobile or desktop view
+  const updateChatLayout = () => {
+    const chatSection = document.getElementById("chat-section")
+    if (!chatSection) return
+
+    if (isMobileView) {
+      chatSection.classList.add("mobile-chat-view")
+
+      // If we have a conversation open, show it
+      if (currentMatchId) {
+        showMobileChatView()
+      } else {
+        showMobileConversationsList()
+      }
+
+      // Add back button if it doesn't exist
+      if (!document.getElementById("mobile-chat-back")) {
+        const backButton = document.createElement("button")
+        backButton.id = "mobile-chat-back"
+        backButton.className = "mobile-chat-back"
+        backButton.innerHTML = '<i class="fas fa-arrow-left"></i>'
+        backButton.addEventListener("click", showMobileConversationsList)
+
+        // Insert at the beginning of chat header
+        if (chatHeader) {
+          chatHeader.insertBefore(backButton, chatHeader.firstChild)
+        }
+      }
+    } else {
+      chatSection.classList.remove("mobile-chat-view")
+
+      // Show both conversations and chat in desktop view
+      if (conversationsList.parentElement) {
+        conversationsList.parentElement.style.display = "flex"
+      }
+      if (chatContainer) {
+        chatContainer.style.display = currentMatchId ? "flex" : "none"
+      }
+
+      // Remove back button if it exists
+      const backButton = document.getElementById("mobile-chat-back")
+      if (backButton) {
+        backButton.remove()
+      }
+    }
+  }
+
+  // Show mobile conversations list view
+  const showMobileConversationsList = () => {
+    if (!isMobileView) return
+
+    if (conversationsList.parentElement) {
+      conversationsList.parentElement.style.display = "flex"
+    }
+    if (chatContainer) {
+      chatContainer.style.display = "none"
+    }
+  }
+
+  // Show mobile chat view
+  const showMobileChatView = () => {
+    if (!isMobileView) return
+
+    if (conversationsList.parentElement) {
+      conversationsList.parentElement.style.display = "none"
+    }
+    if (chatContainer) {
+      chatContainer.style.display = "flex"
+    }
   }
 
   // Bind events
@@ -377,6 +466,11 @@ const chatModule = (() => {
       // Add event listener using event delegation
       conversationItem.addEventListener("click", () => {
         openConversation(otherUser.id, id)
+
+        // In mobile view, switch to chat view
+        if (isMobileView) {
+          showMobileChatView()
+        }
       })
 
       conversationsList.appendChild(conversationItem)
@@ -482,7 +576,12 @@ const chatModule = (() => {
           otherUserData.displayName || otherUserData.name || "Anonymous",
         ).textContent
 
+        // Keep the back button if it exists
+        const backButton = document.getElementById("mobile-chat-back")
+        const backButtonHtml = backButton ? backButton.outerHTML : ""
+
         chatHeader.innerHTML = `
+          ${backButtonHtml}
           <div class="chat-header-user">
             <div class="chat-header-photo" style="background-image: url('${userPhoto}')"></div>
             <h3>${displayName}</h3>
@@ -500,6 +599,14 @@ const chatModule = (() => {
           viewProfileBtn.addEventListener("click", () => {
             viewProfile(userId)
           })
+        }
+
+        // Re-add event listener to back button if we're in mobile view
+        if (isMobileView) {
+          const newBackButton = document.getElementById("mobile-chat-back")
+          if (newBackButton) {
+            newBackButton.addEventListener("click", showMobileConversationsList)
+          }
         }
       }
 
