@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HeartMatch - Dashboard</title>
+    <meta name="description" content="HeartMatch dashboard - Find your perfect match" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/profile.css" />
+  </head>
+  <body>
+    <!-- Dashboard Page -->
+    <div id="dashboard-page" class="dashboard-container">
+      <header class="dashboard-header">
+        <div class="dashboard-logo">
+          <img src="images/logo.png" alt="HeartMatch Logo" />
+          <h1>HeartMatch</h1>
+        </div>
+        <div class="dashboard-user">
+          <div class="dashboard-user-photo" id="user-photo"></div>
+          <span class="dashboard-user-name" id="user-name"></span>
+          <button id="logout-btn" class="btn secondary-btn">Logout</button>
+        </div>
+      </header>
+
+      <div class="dashboard-content">
+        <nav class="dashboard-nav">
+          <div class="nav-item active" data-section="discover">
+            <i class="fas fa-fire"></i>
+            <span>Discover</span>
+          </div>
+          <div class="nav-item" data-section="matches">
+            <i class="fas fa-heart"></i>
+            <span>Matches</span>
+          </div>
+          <div class="nav-item" data-section="chat">
+            <i class="fas fa-comment"></i>
+            <span>Chat</span>
+          </div>
+          <div class="nav-item" data-section="profile">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+          </div>
+          <div class="nav-item" data-section="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </div>
+        </nav>
+
+        <main class="dashboard-main">
+          <!-- Discover Section -->
+          <section id="discover-section" class="content-section">
+            <div class="discover-container">
+              <div id="card-container" class="card-container">
+                <!-- Profile cards will be dynamically added here -->
+              </div>
+              <div class="card-actions">
+                <button id="dislike-btn" class="card-btn dislike-btn">
+                  <i class="fas fa-times"></i>
+                </button>
+                <button id="view-profile-btn" class="card-btn view-profile-btn">
+                  <i class="fas fa-user"></i>
+                </button>
+                <button id="rose-btn" class="action-btn rose-btn" title="Send a Rose">
+                  <i class="fas fa-rose"></i>
+                  <span class="rose-count">0</span>
+                </button>
+                <button id="like-btn" class="card-btn like-btn">
+                  <i class="fas fa-heart"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Matches Section -->
+          <section id="matches-section" class="content-section hidden">
+            <div class="matches-container">
+              <div class="matches-header">
+                <h2>Your Matches</h2>
+              </div>
+              <div id="matches-list" class="matches-list">
+                <!-- Match cards will be dynamically added here -->
+              </div>
+              <div id="no-matches-message" class="no-matches-message hidden">
+                <img src="images/no-matches.svg" alt="No matches" />
+                <h3>No matches yet</h3>
+                <p>Start swiping to find your matches!</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Chat Section -->
+          <section id="chat-section" class="content-section hidden">
+            <div class="chat-container">
+              <div class="conversations-sidebar">
+                <div class="conversations-header">
+                  <h2>Messages</h2>
+                </div>
+                <div id="conversations-list" class="conversations-list">
+                  <!-- Conversation items will be dynamically added here -->
+                </div>
+                <div id="no-conversations-message" class="no-conversations-message hidden">
+                  <img src="images/no-messages.svg" alt="No messages" />
+                  <h3>No messages yet</h3>
+                  <p>Match with someone to start chatting!</p>
+                </div>
+              </div>
+              <div id="chat-container" class="chat-main hidden">
+                <div class="chat-header">
+                  <!-- Chat header will be dynamically added here -->
+                </div>
+                <div class="messages-container">
+                  <!-- Messages will be dynamically added here -->
+                </div>
+                <div class="typing-indicator hidden">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div class="message-input-container">
+                  <input type="text" id="message-input" class="message-input" placeholder="Type a message..." />
+                  <button id="send-message-btn" class="send-message-btn">
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Profile Section -->
+          <section id="profile-section" class="content-section hidden">
+            <div id="profile-content" class="profile-container">
+              <!-- Profile content will be dynamically added here -->
+            </div>
+          </section>
+
+          <!-- Settings Section -->
+          <section id="settings-section" class="content-section hidden">
+            <div class="settings-container">
+              <div class="settings-header">
+                <h2>Settings</h2>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <h3>Discovery Preferences</h3>
+                </div>
+                <div class="settings-card-body">
+                  <form id="preferences-form">
+                    <div class="form-group">
+                      <label for="gender-preference">Show Me</label>
+                      <select id="gender-preference" class="form-select">
+                        <option value="male">Men</option>
+                        <option value="female">Women</option>
+                        <option value="all" selected>Everyone</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Age Range</label>
+                      <div class="range-group">
+                        <input type="number" id="min-age" class="form-input" min="18" max="99" value="18" />
+                        <span>to</span>
+                        <input type="number" id="max-age" class="form-input" min="18" max="99" value="50" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="max-distance">Maximum Distance (km)</label>
+                      <input type="number" id="max-distance" class="form-input" min="1" max="100" value="50" />
+                    </div>
+                    <button type="button" id="save-preferences-btn" class="btn primary-btn">Save Preferences</button>
+                  </form>
+                </div>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <h3>Notifications</h3>
+                </div>
+                <div class="settings-card-body">
+                  <div class="toggle-switch">
+                    <span class="toggle-label">Enable Notifications</span>
+                    <input type="checkbox" id="notification-toggle" class="toggle-input" checked />
+                    <label for="notification-toggle" class="toggle-slider"></label>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <h3>Account</h3>
+                </div>
+                <div class="settings-card-body">
+                  <div class="danger-zone">
+                    <h3>Danger Zone</h3>
+                    <p>Once you delete your account, there is no going back. Please be certain.</p>
+                    <button id="delete-account-btn" class="btn secondary-btn">Delete Account</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+      
+      <!-- Mobile Bottom Navigation -->
+      <nav class="mobile-nav">
+        <div class="mobile-nav-container">
+          <div class="mobile-nav-item active" data-section="discover">
+            <i class="fas fa-fire"></i>
+            <span>Discover</span>
+          </div>
+          <div class="mobile-nav-item" data-section="matches">
+            <i class="fas fa-heart"></i>
+            <span>Matches</span>
+          </div>
+          <div class="mobile-nav-item" data-section="chat">
+            <i class="fas fa-comment"></i>
+            <span>Chat</span>
+          </div>
+          <div class="mobile-nav-item" data-section="profile">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+          </div>
+          <div class="mobile-nav-item" data-section="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notifications-container"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <!-- JavaScript -->
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/discover.js"></script>
+    <script src="js/matches.js"></script>
+    <script src="js/chat.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Fallback initialization -->
+    <script>
+      // Ensure dashboard is initialized
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          if (window.dashboardModule && typeof window.dashboardModule.init === "function") {
+            console.log("Fallback initialization of dashboard module");
+            window.dashboardModule.init();
+          }
+        }, 1000);
+      });
+    </script>
+    <script src="js/add-test-profiles.js"></script>
+  </body>
+</html>

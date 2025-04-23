@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HeartMatch - Find Your Perfect Match</title>
+    <meta name="description" content="HeartMatch is a modern dating platform to help you find your perfect match." />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/landing.css" />
+  </head>
+  <body>
+    <!-- Landing Page -->
+    <div id="landing-page" class="landing-container">
+      <header class="landing-header">
+        <div class="landing-logo">
+          <img src="images/logo.png" alt="HeartMatch Logo" />
+          <h1>HeartMatch</h1>
+        </div>
+        <nav class="landing-nav">
+          <button id="login-btn" class="nav-btn" onclick="window.location.href='auth.html?form=login'">Login</button>
+          <button id="get-started-btn" class="nav-btn primary-btn" onclick="window.location.href='auth.html?form=signup'">Get Started</button>
+        </nav>
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="document.querySelector('.landing-nav').classList.toggle('show-mobile-nav')">
+          <i class="fas fa-bars"></i>
+        </button>
+      </header>
+
+      <div class="landing-hero">
+        <div class="hero-content">
+          <h1>Find Your Perfect Match</h1>
+          <p>Join thousands of singles who have found love on HeartMatch. Start your journey today!</p>
+          <button id="hero-cta-btn" class="cta-btn" onclick="window.location.href='auth.html?form=signup'">Start Matching Now</button>
+        </div>
+        <div class="hero-image">
+          <img src="images/hero-image.png" alt="Couple Match" />
+        </div>
+      </div>
+
+      <div class="landing-features">
+        <h2>Why Choose HeartMatch?</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-heart"></i>
+            </div>
+            <h3>Smart Matching</h3>
+            <p>Our algorithm finds compatible matches based on your preferences and interests.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3>Safe & Secure</h3>
+            <p>Your privacy and security are our top priorities. All data is encrypted and protected.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <h3>Real Connections</h3>
+            <p>Chat with your matches in real-time and build meaningful relationships.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="landing-testimonials">
+        <h2>Success Stories</h2>
+        <div id="testimonial-container" class="testimonial-container">
+          <!-- Testimonials will be dynamically added here -->
+        </div>
+      </div>
+
+      <div class="landing-cta">
+        <div class="cta-content">
+          <h2>Ready to Find Your Match?</h2>
+          <p>Join HeartMatch today and start your journey to finding love.</p>
+          <button id="cta-button" class="cta-btn" onclick="window.location.href='auth.html?form=signup'">Create Your Profile</button>
+        </div>
+      </div>
+
+      <footer class="landing-footer">
+        <div class="footer-content">
+          <div class="footer-logo">
+            <img src="images/logo.png" alt="HeartMatch Logo" />
+            <h2>HeartMatch</h2>
+          </div>
+          <div class="footer-links">
+            <div class="footer-column">
+              <h3>Company</h3>
+              <ul>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Careers</a></li>
+                <li><a href="#">Press</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Resources</h3>
+              <ul>
+                <li><a href="#">Blog</a></li>
+                <li><a href="#">Dating Tips</a></li>
+                <li><a href="#">Success Stories</a></li>
+              </ul>
+            </div>
+            <div class="footer-column">
+              <h3>Legal</h3>
+              <ul>
+                <li><a href="#">Privacy Policy</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Cookie Policy</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p>&copy; 2023 HeartMatch. All rights reserved.</p>
+          <div class="social-links">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notifications-container"></div>
+
+    <!-- JavaScript -->
+    <script src="js/utils.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <!-- App Scripts - Order matters! -->
+    <script src="js/landing.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Direct initialization script -->
+    <script>
+      // Fallback initialization
+      document.addEventListener("DOMContentLoaded", function() {
+        console.log("DOM loaded in inline script");
+        
+        // Direct button handlers as a last resort
+        const buttons = {
+          "get-started-btn": "auth.html?form=signup",
+          "login-btn": "auth.html?form=login",
+          "hero-cta-btn": "auth.html?form=signup",
+          "cta-button": "auth.html?form=signup"
+        };
+        
+        Object.keys(buttons).forEach(id => {
+          const button = document.getElementById(id);
+          if (button) {
+            button.addEventListener("click", function() {
+              console.log(`Button ${id} clicked (inline handler)`);
+              window.location.href = buttons[id];
+            });
+          }
+        });
+        
+        // Initialize landing module if it exists
+        if (window.landingModule && typeof window.landingModule.init === "function") {
+          console.log("Initializing landing module from inline script");
+          window.landingModule.init();
+        } else {
+          console.log("Landing module not available in inline script");
+        }
+      });
+    </script>
+  </body>
+</html>

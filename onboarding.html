@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HeartMatch - Complete Your Profile</title>
+    <meta name="description" content="Complete your HeartMatch profile to start finding matches" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/onboarding.css" />
+  </head>
+  <body>
+    <!-- Onboarding Page -->
+    <div id="onboarding-page" class="onboarding-container">
+      <header class="onboarding-header">
+        <div class="onboarding-logo">
+          <img src="images/logo.png" alt="HeartMatch Logo" />
+          <h1>HeartMatch</h1>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-inner"></div>
+        </div>
+      </header>
+
+      <div class="onboarding-content">
+        <!-- Step 1: Basic Info -->
+        <div class="onboarding-step">
+          <div class="onboarding-step-header">
+            <h2>Tell us about yourself</h2>
+            <p>Let's start with some basic information</p>
+          </div>
+          <div class="onboarding-form">
+            <div class="form-group">
+              <label for="onboarding-name">Display Name</label>
+              <input type="text" id="onboarding-name" class="form-input" placeholder="How you want to be known" required />
+            </div>
+            <div class="form-group">
+              <label for="onboarding-birthdate">Birth Date</label>
+              <input type="date" id="onboarding-birthdate" class="form-input" required />
+              <p class="form-hint">You must be at least 18 years old</p>
+            </div>
+            <div class="form-group">
+              <label>Gender</label>
+              <div class="radio-group">
+                <div class="radio-option">
+                  <input type="radio" id="gender-male" name="gender" value="male" />
+                  <label for="gender-male">Male</label>
+                </div>
+                <div class="radio-option">
+                  <input type="radio" id="gender-female" name="gender" value="female" />
+                  <label for="gender-female">Female</label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="onboarding-location">Location</label>
+              <input type="text" id="onboarding-location" class="form-input" placeholder="City, Country" />
+            </div>
+            <div class="onboarding-nav">
+              <div class="onboarding-nav-left">
+                <!-- Skip button removed -->
+              </div>
+              <button type="button" class="btn primary-btn next-step-btn">Continue <i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Photos -->
+        <div class="onboarding-step hidden">
+          <div class="onboarding-step-header">
+            <h2>Add your photos</h2>
+            <p>Show your best self with up to 3 photos</p>
+          </div>
+          <div class="onboarding-form">
+            <div class="photo-upload-container">
+              <div id="photo-upload-area" class="photo-upload-area">
+                <div class="photo-upload-icon">
+                  <i class="fas fa-camera"></i>
+                </div>
+                <div class="photo-upload-text">
+                  <h3>Upload Photos</h3>
+                  <p>Drag and drop or click on the boxes below</p>
+                </div>
+              </div>
+              <div class="photo-tips">
+                <h4><i class="fas fa-lightbulb"></i> Photo Tips</h4>
+                <ul>
+                  <li>Clear, well-lit photos get more matches</li>
+                  <li>Your first photo will be your primary photo</li>
+                  <li>Show your interests and personality</li>
+                </ul>
+              </div>
+              <div id="photo-preview-container" class="photo-preview-container">
+                <!-- Photo upload boxes will be dynamically added here -->
+              </div>
+            </div>
+            <div class="onboarding-nav">
+              <div class="onboarding-nav-left">
+                <button type="button" class="btn secondary-btn prev-step-btn"><i class="fas fa-arrow-left"></i> Back</button>
+              </div>
+              <button type="button" class="btn primary-btn next-step-btn">Continue <i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Bio -->
+        <div class="onboarding-step hidden">
+          <div class="onboarding-step-header">
+            <h2>Write your bio</h2>
+            <p>Tell others about yourself</p>
+          </div>
+          <div class="onboarding-form">
+            <div class="form-group">
+              <label for="onboarding-bio">About Me</label>
+              <textarea id="onboarding-bio" class="form-textarea" placeholder="Share something interesting about yourself..."></textarea>
+              <div class="bio-tips">
+                <h4><i class="fas fa-lightbulb"></i> Bio Tips</h4>
+                <ul>
+                  <li>Be authentic and show your personality</li>
+                  <li>Mention your hobbies and passions</li>
+                  <li>Add a touch of humor if that's your style</li>
+                </ul>
+              </div>
+            </div>
+            <div class="onboarding-nav">
+              <div class="onboarding-nav-left">
+                <button type="button" class="btn secondary-btn prev-step-btn"><i class="fas fa-arrow-left"></i> Back</button>
+              </div>
+              <button type="button" class="btn primary-btn next-step-btn">Continue <i class="fas fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Interests -->
+        <div class="onboarding-step hidden">
+          <div class="onboarding-step-header">
+            <h2>Add your interests</h2>
+            <p>What do you enjoy doing?</p>
+          </div>
+          <div class="onboarding-form">
+            <div class="interests-container">
+              <div class="interests-input-container">
+                <input type="text" id="interest-input" class="form-input" placeholder="Add an interest..." />
+                <button type="button" id="add-interest-btn" class="btn primary-btn">Add</button>
+              </div>
+              <div class="interests-counter">
+                <span>Interests added: <span id="interest-count" class="text-red-500">0</span> (minimum 3)</span>
+              </div>
+              <div id="interests-list" class="interests-list">
+                <!-- Interests will be added here -->
+              </div>
+              <div class="interests-suggestions">
+                <h4>Popular interests:</h4>
+                <div class="suggestion-tags">
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Travel')">Travel</span>
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Music')">Music</span>
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Cooking')">Cooking</span>
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Fitness')">Fitness</span>
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Reading')">Reading</span>
+                  <span class="suggestion-tag" onclick="window.onboardingModule.addInterest('Photography')">Photography</span>
+                </div>
+              </div>
+            </div>
+            <div class="onboarding-nav">
+              <div class="onboarding-nav-left">
+                <button type="button" class="btn secondary-btn prev-step-btn"><i class="fas fa-arrow-left"></i> Back</button>
+              </div>
+              <button type="button" id="complete-onboarding-btn" class="btn primary-btn">Complete Profile <i class="fas fa-check"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notifications-container"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <!-- JavaScript -->
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/onboarding.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

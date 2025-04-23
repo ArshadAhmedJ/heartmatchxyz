@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow users to read and write their own data
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow users to read and write their own likes
+    // Also allow reading likes where the current user is the liked user (for match checking)
+    match /likes/{likeId} {
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.likedUserId == request.auth.uid
+      );
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Allow users to read and write their own dislikes
+    match /dislikes/{dislikeId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Allow users to read and write their own matches
+    match /matches/{matchId} {
+      allow read: if request.auth != null && (
+        resource.data.users[0] == request.auth.uid || 
+        resource.data.users[1] == request.auth.uid
+      );
+      // Modified to allow creation with more flexible rules
+      allow create: if request.auth != null && 
+        request.resource.data.users is list && 
+        request.resource.data.users.size() == 2 && 
+        (request.resource.data.users[0] == request.auth.uid || 
+         request.resource.data.users[1] == request.auth.uid);
+      // Modified to allow updates with more flexible rules
+      allow update: if request.auth != null && 
+        resource.data.users is list && 
+        resource.data.users.size() == 2 && 
+        (resource.data.users[0] == request.auth.uid || 
+         resource.data.users[1] == request.auth.uid);
+    }
+    
+    // Allow users to read and write messages in their matches
+    match /matches/{matchId}/messages/{messageId} {
+      allow read, write: if request.auth != null && (
+        exists(/databases/$(database)/documents/matches/$(matchId)) && 
+        (
+          get(/databases/$(database)/documents/matches/$(matchId)).data.users[0] == request.auth.uid || 
+          get(/databases/$(database)/documents/matches/$(matchId)).data.users[1] == request.auth.uid
+        )
+      );
+    }
+    
+    // Allow users to send and receive roses
+    match /roses/{roseId} {
+      allow read: if request.auth != null && (
+        resource.data.senderId == request.auth.uid || 
+        resource.data.receiverId == request.auth.uid
+      );
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.senderId == request.auth.uid;
+    }
+  }
+}
