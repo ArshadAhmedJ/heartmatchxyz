@@ -339,23 +339,30 @@
   .profile-avatar {
     width: 80px;
     height: 80px;
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 40px;
+    left: 20px; /* Change from 50% and translateX(-50%) to fixed left position */
+    bottom: -40px; /* Move avatar to overlap the cover photo bottom edge */
+    border: 3px solid var(--bg-color);
   }
 
   .profile-name-info {
-    padding: 50px 20px 0;
-    text-align: center;
+    padding: 50px 20px 0 110px; /* Add left padding to accommodate the avatar */
+    text-align: left; /* Change from center to left alignment */
+    margin-top: 10px; /* Add top margin for spacing */
   }
 
   .profile-name-info h2 {
-    justify-content: center;
+    justify-content: flex-start; /* Change from center to flex-start */
     font-size: 1.3rem;
   }
 
   .profile-location {
-    justify-content: center;
+    justify-content: flex-start; /* Change from center to flex-start */
+  }
+
+  /* Add more space to the header to accommodate the new layout */
+  .profile-header {
+    padding-bottom: 30px;
+    margin-bottom: 10px;
   }
 
   .profile-tabs {
@@ -412,15 +419,17 @@
   }
 }
 
-/* Add extra small device support */
+/* Add an extra media query for very small devices */
 @media (max-width: 360px) {
   .profile-avatar {
     width: 70px;
     height: 70px;
+    left: 15px;
+    bottom: -35px;
   }
 
   .profile-name-info {
-    padding-top: 40px;
+    padding: 45px 15px 0 95px;
   }
 
   .profile-name-info h2 {
