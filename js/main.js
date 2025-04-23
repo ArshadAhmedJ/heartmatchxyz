@@ -400,3 +400,73 @@ function setupAuthStateListener() {
     console.error("Firebase auth not available for auth state listener")
   }
 }
+
+// Add the following to the document ready function or main initialization
+
+// Check for auto-login on main pages
+document.addEventListener("DOMContentLoaded", () => {
+  // Initialize Firebase if not already initialized
+  if (typeof firebase !== "undefined" && firebase.apps.length === 0) {
+    initFirebase()
+  }
+
+  // Set up persistence for offline capability
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  }
+
+  // Auto-redirect if user is already logged in
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().onAuthStateChanged((user) => {
+      // If we're on the landing page or auth page and user is logged in, redirect to dashboard
+      if (
+        user &&
+        (window.location.pathname.endsWith("index.html") ||
+          window.location.pathname.endsWith("/") ||
+          window.location.pathname.endsWith("auth.html"))
+      ) {
+        window.location.href = "dashboard.html"
+      }
+    })
+  }
+})
+
+function initFirebase() {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAsc5FpnqdJdUXql2jAIPf7-VSLIv4TIv0",
+    authDomain: "datingapp-482ac.firebaseapp.com",
+    projectId: "datingapp-482ac",
+    storageBucket: "datingapp-482ac.firebasestorage.app",
+    messagingSenderId: "672058081482",
+    appId: "1:672058081482:web:d61e90a5f397eb46e4b433",
+    measurementId: "G-F300RLDGVF",
+  }
+
+  try {
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig)
+    }
+
+    // Make Firebase services available globally
+    window.firebase = firebase
+    window.auth = firebase.auth()
+    window.db = firebase.firestore()
+    window.storage = firebase.storage ? firebase.storage() : null
+
+    console.log("Firebase initialized successfully")
+
+    // Enable persistence to work offline
+    firebase
+      .firestore()
+      .enablePersistence()
+      .then(() => {
+        console.log("Firestore persistence enabled")
+      })
+      .catch((err) => {
+        console.error("Error enabling Firestore persistence:", err)
+      })
+  } catch (error) {
+    console.error("Error initializing Firebase:", error)
+  }
+}

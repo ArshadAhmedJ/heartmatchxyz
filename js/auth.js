@@ -18,7 +18,11 @@ window.authModule = (() => {
   if (typeof utils === "undefined") {
     console.error("Utils is not defined. Ensure utils.js is included in your HTML.")
     // You might want to initialize a mock utils object for development purposes:
-    // utils = { showNotification: (message, type) => console.log(`${type}: ${message}`), isValidEmail: () => true, isStrongPassword: () => true };
+    utils = {
+      showNotification: (message, type) => console.log(`${type}: ${message}`),
+      isValidEmail: () => true,
+      isStrongPassword: () => true,
+    }
   }
 
   // DOM elements
@@ -68,6 +72,19 @@ window.authModule = (() => {
 
     // Check for auto-login
     checkForAutoLogin()
+
+    // Set up Firebase Auth state change listener
+    firebase.auth().onAuthStateChanged(handleAuthStateChanged)
+
+    // Check for saved credentials and auto-login
+    const savedCredentials = getSavedCredentials()
+    if (savedCredentials && savedCredentials.email && savedCredentials.password) {
+      // Only auto-login if not already logged in
+      if (!firebase.auth().currentUser) {
+        console.log("Auto-login with saved credentials")
+        loginWithCredentials(savedCredentials.email, savedCredentials.password, true)
+      }
+    }
   }
 
   // Check if we should auto-login the user
@@ -266,7 +283,7 @@ window.authModule = (() => {
   }
 
   // Login with email and password
-  const login = async (email, password, remember = false) => {
+  const loginWithCredentials = async (email, password, remember = false) => {
     console.log("Login attempt with email:", email)
 
     try {
@@ -450,7 +467,7 @@ window.authModule = (() => {
   }
 
   // Logout
-  const logout = async () => {
+  const logoutUser = async () => {
     console.log("Logout attempt")
 
     try {
@@ -458,6 +475,7 @@ window.authModule = (() => {
 
       // Clear saved auth data on logout
       clearSavedAuth()
+      clearSavedCredentials()
 
       utils.showNotification("Logout successful!", "success")
       window.location.href = "index.html"
@@ -661,6 +679,80 @@ window.authModule = (() => {
     }
   }
 
+  // Save user credentials to localStorage
+  function saveUserCredentials(email, password) {
+    if (!email || !password) return
+
+    const expirationDate = new Date()
+    expirationDate.setDate(expirationDate.getDate() + 30) // 30 days expiration
+
+    const credentials = {
+      email: email,
+      password: password,
+      expiration: expirationDate.getTime(),
+    }
+
+    localStorage.setItem("heartMatchCredentials", JSON.stringify(credentials))
+  }
+
+  // Get saved credentials from localStorage
+  function getSavedCredentials() {
+    const savedCredentials = localStorage.getItem("heartMatchCredentials")
+    if (!savedCredentials) return null
+
+    const credentials = JSON.parse(savedCredentials)
+
+    // Check if credentials are expired
+    if (credentials.expiration && new Date().getTime() > credentials.expiration) {
+      clearSavedCredentials()
+      return null
+    }
+
+    return credentials
+  }
+
+  // Clear saved credentials
+  function clearSavedCredentials() {
+    localStorage.removeItem("heartMatchCredentials")
+  }
+
+  // Update the login function to handle remember me
+  const login = async (email, password, rememberMe = false) => {
+    if (!email || !password) {
+      utils.showNotification("Please enter both email and password", "error")
+      return
+    }
+
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password)
+
+      // Save credentials if remember me is checked
+      if (rememberMe) {
+        saveUserCredentials(email, password)
+      } else {
+        clearSavedCredentials()
+      }
+
+      await handleSuccessfulLogin(userCredential.user)
+    } catch (error) {
+      handleAuthError(error)
+    }
+  }
+
+  // Update the logout function to clear saved credentials
+  const logout = async () => {
+    try {
+      await firebase.auth().signOut()
+      clearSavedCredentials()
+      utils.showNotification("Logout successful!", "success")
+      window.location.href = "index.html"
+    } catch (error) {
+      console.error("Error signing out:", error)
+      utils.showNotification("Logout failed. Please try again.", "error")
+    }
+  }
+
   // Public API
   return {
     init,
@@ -697,3 +789,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000)
   }
 })
+
+function handleAuthError(error) {
+  console.error("Login error:", error)
+  let errorMessage = "Login failed. Please try again."
+
+  switch (error.code) {
+    case "auth/user-not-found":
+      errorMessage = "No account found with this email."
+      break
+    case "auth/wrong-password":
+      errorMessage = "Incorrect password. Please try again."
+      break
+    case "auth/invalid-email":
+      errorMessage = "Invalid email address."
+      break
+    case "auth/user-disabled":
+      errorMessage = "This account has been disabled."
+      break
+  }
+
+  utils.showNotification(errorMessage, "error")
+}
+
+async function redirectAfterAuth(user) {
+  utils.showNotification("Login successful!", "success")
+
+  // Check if user has a profile after successful login
+  const userDoc = await firebase.firestore().collection("users").doc(user.uid).get()
+
+  if (userDoc.exists) {
+    console.log("User profile exists, redirecting to dashboard")
+    window.location.href = "dashboard.html"
+  } else {
+    console.log("User profile doesn't exist, redirecting to onboarding")
+    window.location.href = "onboarding.html"
+  }
+}
+
+function handleAuthStateChanged(user) {
+  if (user) {
+    console.log("User is signed in:", user)
+    // You can perform actions here when the user's authentication state changes
+  } else {
+    console.log("User is signed out")
+    // You can perform actions here when the user signs out
+  }
+}
