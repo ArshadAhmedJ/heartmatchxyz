@@ -98,23 +98,5 @@ async function addTestProfiles() {
   alert("Test profiles added successfully! Refresh the page to see them.")
 }
 
-// Add a button to the dashboard to run this script
-document.addEventListener("DOMContentLoaded", () => {
-  const path = window.location.pathname
-  if (path.includes("dashboard.html")) {
-    // Create a button
-    const button = document.createElement("button")
-    button.textContent = "Add Test Profiles"
-    button.className = "btn primary-btn"
-    button.style.position = "fixed"
-    button.style.bottom = "20px"
-    button.style.right = "20px"
-    button.style.zIndex = "1000"
-
-    // Add click event
-    button.addEventListener("click", addTestProfiles)
-
-    // Add to body
-    document.body.appendChild(button)
-  }
-})
+// The button creation code has been removed
+// If you need to add test profiles, you can call the addTestProfiles() function from the console
