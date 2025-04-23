@@ -71,25 +71,26 @@
 /* Hero Section */
 .landing-hero {
   display: flex;
+  justify-content: center;
   align-items: center;
-  padding: 5rem 5%;
+  padding: 8rem 5%;
   background: linear-gradient(135deg, #fff6f6 0%, #fff 100%);
+  text-align: center;
 }
 
 .hero-content {
-  flex: 1;
-  max-width: 600px;
+  max-width: 800px;
 }
 
 .hero-content h1 {
-  font-size: 3rem;
+  font-size: 3.5rem;
   margin-bottom: 1.5rem;
   color: var(--text-color);
   line-height: 1.2;
 }
 
 .hero-content p {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   margin-bottom: 2rem;
   color: var(--text-light);
 }
@@ -111,29 +112,6 @@
   background-color: var(--primary-dark);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-}
-
-.hero-image {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.hero-image img {
-  max-width: 100%;
-  max-height: 500px;
-  animation: float 6s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
 }
 
 /* Features Section */
@@ -249,6 +227,7 @@
 
 .footer-logo img {
   height: 40px;
+  filter: brightness(0) invert(1);
 }
 
 .footer-logo h2 {
@@ -345,17 +324,11 @@
 /* Responsive Styles */
 @media (max-width: 992px) {
   .landing-hero {
-    flex-direction: column;
-    text-align: center;
-    padding: 3rem 5%;
-  }
-
-  .hero-content {
-    margin-bottom: 2rem;
+    padding: 6rem 5%;
   }
 
   .hero-content h1 {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
   }
 }
 
@@ -366,6 +339,14 @@
 
   .mobile-menu-btn {
     display: block;
+  }
+
+  .landing-hero {
+    padding: 4rem 5%;
+  }
+
+  .hero-content h1 {
+    font-size: 2.5rem;
   }
 
   .landing-features h2,
@@ -405,6 +386,10 @@
 
   .landing-logo h1 {
     font-size: 1.2rem;
+  }
+
+  .landing-hero {
+    padding: 3rem 5%;
   }
 
   .hero-content h1 {
