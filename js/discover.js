@@ -657,9 +657,22 @@ const discoverModule = (() => {
     })
 
     // Enable buttons
-    if (likeBtn) likeBtn.disabled = false
-    if (dislikeBtn) dislikeBtn.disabled = false
-    if (viewProfileBtn) viewProfileBtn.disabled = false
+    if (likeBtn) {
+      likeBtn.disabled = false
+      likeBtn.style.display = "flex"
+    }
+    if (dislikeBtn) {
+      dislikeBtn.disabled = false
+      dislikeBtn.style.display = "flex"
+    }
+    if (viewProfileBtn && viewProfileBtn.style.display !== "none") {
+      viewProfileBtn.disabled = false
+      viewProfileBtn.style.display = "flex"
+    }
+    if (roseBtn) {
+      roseBtn.style.display = "flex"
+      // Rose button enabled/disabled state is handled by checkDailyRose()
+    }
 
     // Check if user has roses and enable/disable rose button
     checkDailyRose()
@@ -749,10 +762,23 @@ const discoverModule = (() => {
           currentProfile = profile
           showProfile(profile)
 
-          // Enable buttons
-          if (likeBtn) likeBtn.disabled = false
-          if (dislikeBtn) dislikeBtn.disabled = false
-          if (viewProfileBtn) viewProfileBtn.disabled = false
+          // Enable and show buttons
+          if (likeBtn) {
+            likeBtn.disabled = false
+            likeBtn.style.display = "flex"
+          }
+          if (dislikeBtn) {
+            dislikeBtn.disabled = false
+            dislikeBtn.style.display = "flex"
+          }
+          if (viewProfileBtn && viewProfileBtn.style.display !== "none") {
+            viewProfileBtn.disabled = false
+            viewProfileBtn.style.display = "flex"
+          }
+          if (roseBtn) {
+            roseBtn.style.display = "flex"
+            // Rose button enabled/disabled state is handled by checkDailyRose()
+          }
 
           // Check if user has roses and enable/disable rose button
           checkDailyRose()
@@ -761,10 +787,22 @@ const discoverModule = (() => {
     })
 
     // Disable action buttons
-    if (likeBtn) likeBtn.disabled = true
-    if (dislikeBtn) dislikeBtn.disabled = true
-    if (viewProfileBtn) viewProfileBtn.disabled = true
-    if (roseBtn) roseBtn.disabled = true
+    if (likeBtn) {
+      likeBtn.disabled = true
+      likeBtn.style.display = "none"
+    }
+    if (dislikeBtn) {
+      dislikeBtn.disabled = true
+      dislikeBtn.style.display = "none"
+    }
+    if (viewProfileBtn) {
+      viewProfileBtn.disabled = true
+      viewProfileBtn.style.display = "none"
+    }
+    if (roseBtn) {
+      roseBtn.disabled = true
+      roseBtn.style.display = "none"
+    }
   }
 
   // Show empty state when no profiles are available
@@ -821,10 +859,22 @@ const discoverModule = (() => {
     }
 
     // Disable action buttons
-    if (likeBtn) likeBtn.disabled = true
-    if (dislikeBtn) dislikeBtn.disabled = true
-    if (viewProfileBtn) viewProfileBtn.disabled = true
-    if (roseBtn) roseBtn.disabled = true
+    if (likeBtn) {
+      likeBtn.disabled = true
+      likeBtn.style.display = "none"
+    }
+    if (dislikeBtn) {
+      dislikeBtn.disabled = true
+      dislikeBtn.style.display = "none"
+    }
+    if (viewProfileBtn) {
+      viewProfileBtn.disabled = true
+      viewProfileBtn.style.display = "none"
+    }
+    if (roseBtn) {
+      roseBtn.disabled = true
+      roseBtn.style.display = "none"
+    }
   }
 
   // Like current profile
@@ -1046,9 +1096,18 @@ const discoverModule = (() => {
     }
 
     // Re-enable buttons
-    if (likeBtn) likeBtn.disabled = false
-    if (dislikeBtn) dislikeBtn.disabled = false
-    if (viewProfileBtn) viewProfileBtn.disabled = false
+    if (likeBtn) {
+      likeBtn.disabled = false
+      likeBtn.style.display = "flex"
+    }
+    if (dislikeBtn) {
+      dislikeBtn.disabled = false
+      dislikeBtn.style.display = "flex"
+    }
+    if (viewProfileBtn) {
+      viewProfileBtn.disabled = false
+      viewProfileBtn.style.display = "flex"
+    }
 
     // Check if user has roses and enable/disable rose button
     checkDailyRose()
