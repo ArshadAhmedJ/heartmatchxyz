@@ -1,10 +1,3 @@
-// Add this line near the top of the file, after other script imports
-import "./anti-inspect.js"
-import firebase from "firebase/app"
-import "firebase/auth"
-import "firebase/firestore"
-import "firebase/storage"
-
 // Wait for DOM to be fully loaded
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM loaded in main.js")
