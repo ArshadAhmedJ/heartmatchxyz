@@ -1,0 +1,80 @@
+/* Rose icon styling */
+.rose-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.rose-icon-small {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.rose-icon-medium {
+  width: 32px;
+  height: 32px;
+}
+
+/* Rose animation */
+.rose-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+  border-radius: 10px;
+}
+
+.rose-overlay.active {
+  opacity: 1;
+}
+
+.rose-animation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.rose-animation-icon {
+  width: 100px;
+  height: 100px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+}
+
+/* Rose count badge */
+.rose-count {
+  display: inline-block;
+  background-color: #f06595;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  line-height: 20px;
+  font-size: 12px;
+  margin-left: 5px;
+}

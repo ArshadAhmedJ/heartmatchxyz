@@ -45,6 +45,45 @@ const discoverModule = (() => {
     loadProfiles()
     checkDailyRose() // Check if user has a daily rose
 
+    // Update the rose button to use the new rose icon
+    if (roseBtn) {
+      // Remove any existing content
+      roseBtn.innerHTML = ""
+
+      // Create image element for rose icon
+      const roseImg = document.createElement("img")
+      roseImg.src = "images/rose-icon.png"
+      roseImg.alt = "Rose"
+      roseImg.className = "rose-icon"
+
+      // Create span for rose count
+      const roseCount = document.createElement("span")
+      roseCount.className = "rose-count"
+      roseCount.textContent = "0"
+
+      // Add elements to button
+      roseBtn.appendChild(roseImg)
+      roseBtn.appendChild(roseCount)
+
+      // Add some styling to the button
+      roseBtn.style.display = "flex"
+      roseBtn.style.alignItems = "center"
+      roseBtn.style.justifyContent = "center"
+      roseBtn.style.gap = "5px"
+    }
+
+    // Remove user profile icon if it exists
+    if (viewProfileBtn) {
+      // We'll keep the button but remove the icon
+      const icon = viewProfileBtn.querySelector("i")
+      if (icon) {
+        icon.remove()
+      }
+
+      // Update the text to be more clear without the icon
+      viewProfileBtn.textContent = "View Profile"
+    }
+
     console.log("Discover module initialized")
   }
 
@@ -240,7 +279,7 @@ const discoverModule = (() => {
         roseOverlay.className = "rose-overlay"
         roseOverlay.innerHTML = `
           <div class="rose-animation">
-            <i class="fas fa-rose"></i>
+            <img src="images/rose-icon.png" alt="Rose" class="rose-animation-icon">
           </div>
         `
         card.appendChild(roseOverlay)
@@ -321,21 +360,24 @@ const discoverModule = (() => {
           await db
             .collection("matches")
             .doc(matchId)
-            .set({
-              users: userIds,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              unreadCount: {
-                [user.uid]: 0,
-                [currentProfile.id]: 0,
-              },
-              confirmed: true,
-              rose: {
-                sent: true,
-                senderId: user.uid,
+            .set(
+              {
+                users: userIds,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                unreadCount: {
+                  [user.uid]: 0,
+                  [currentProfile.id]: 0,
+                },
+                confirmed: true,
+                rose: {
+                  sent: true,
+                  senderId: user.uid,
+                  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                },
               },
-            }, { merge: true }) // Use merge to update if exists or create if not
+              { merge: true },
+            ) // Use merge to update if exists or create if not
 
           console.log("Match created/updated with rose:", matchId)
 
@@ -678,16 +720,19 @@ const discoverModule = (() => {
           await db
             .collection("matches")
             .doc(matchId)
-            .set({
-              users: userIds,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              unreadCount: {
-                [user.uid]: 0,
-                [currentProfile.id]: 0,
+            .set(
+              {
+                users: userIds,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                unreadCount: {
+                  [user.uid]: 0,
+                  [currentProfile.id]: 0,
+                },
+                confirmed: true,
               },
-              confirmed: true,
-            }, { merge: true }) // Use merge to update if exists or create if not
+              { merge: true },
+            ) // Use merge to update if exists or create if not
 
           console.log("Match created/updated:", matchId)
 
@@ -836,11 +881,11 @@ const discoverModule = (() => {
         <div class="match-header">
           <h2>It's a Match!</h2>
           <p>You and ${matchedProfile.displayName || matchedProfile.name || "Anonymous"} liked each other</p>
-          ${withRose ? '<p class="rose-sent"><i class="fas fa-rose"></i> You sent a rose!</p>' : ""}
+          ${withRose ? '<p class="rose-sent"><img src="images/rose-icon.png" alt="Rose" class="rose-icon-small"> You sent a rose!</p>' : ""}
         </div>
         <div class="match-images">
           <div class="match-image" style="background-image: url('${userPhoto}')"></div>
-          <div class="match-heart">${withRose ? '<i class="fas fa-rose"></i>' : '<i class="fas fa-heart"></i>'}</div>
+          <div class="match-heart">${withRose ? '<img src="images/rose-icon.png" alt="Rose" class="rose-icon-medium">' : '<i class="fas fa-heart"></i>'}</div>
           <div class="match-image" style="background-image: url('${matchedPhoto}')"></div>
         </div>
         <div class="match-actions">
