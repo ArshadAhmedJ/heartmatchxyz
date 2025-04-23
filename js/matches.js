@@ -6,6 +6,12 @@ const matchesModule = (() => {
   // DOM elements
   let matchesList
   let noMatchesMessage
+  let likesSection
+  let likesList
+  let noLikesMessage
+  let matchesTab
+  let likesTab
+  let activeTab = "matches"
 
   // Initialize matches module
   const init = () => {
@@ -26,6 +32,55 @@ const matchesModule = (() => {
     matchesList = document.getElementById("matches-list")
     noMatchesMessage = document.getElementById("no-matches-message")
 
+    // Create likes section if it doesn't exist
+    const matchesSection = document.querySelector(".matches-section")
+    if (matchesSection) {
+      // Create tabs if they don't exist
+      if (!document.querySelector(".matches-tabs")) {
+        const tabsHTML = `
+          <div class="matches-tabs">
+            <button id="matches-tab" class="tab-btn active">Matches</button>
+            <button id="likes-tab" class="tab-btn">Likes</button>
+          </div>
+        `
+        matchesSection.insertAdjacentHTML("afterbegin", tabsHTML)
+      }
+
+      // Create likes section if it doesn't exist
+      if (!document.getElementById("likes-section")) {
+        const likesHTML = `
+          <div id="likes-section" class="likes-section hidden">
+            <div id="likes-list" class="likes-list"></div>
+            <div id="no-likes-message" class="no-content-message hidden">
+              <div class="empty-state-icon">
+                <img src="images/astronaut.png" alt="No likes yet" class="astronaut-img">
+              </div>
+              <p>No one has liked you yet. Keep improving your profile!</p>
+            </div>
+          </div>
+        `
+        matchesSection.insertAdjacentHTML("beforeend", likesHTML)
+      }
+
+      // Get the new DOM elements
+      likesSection = document.getElementById("likes-section")
+      likesList = document.getElementById("likes-list")
+      noLikesMessage = document.getElementById("no-likes-message")
+      matchesTab = document.getElementById("matches-tab")
+      likesTab = document.getElementById("likes-tab")
+
+      // Add event listeners to tabs
+      if (matchesTab && likesTab) {
+        matchesTab.addEventListener("click", () => {
+          showTab("matches")
+        })
+
+        likesTab.addEventListener("click", () => {
+          showTab("likes")
+        })
+      }
+    }
+
     if (!matchesList) {
       console.error("Matches list element not found")
       return
@@ -35,12 +90,44 @@ const matchesModule = (() => {
     auth.onAuthStateChanged((user) => {
       if (user) {
         loadMatches()
+        loadLikes()
       } else {
         showNoMatchesMessage("Please log in to see your matches")
+        showNoLikesMessage("Please log in to see your likes")
       }
     })
 
     console.log("Matches module initialized")
+  }
+
+  // Show tab
+  const showTab = (tabName) => {
+    activeTab = tabName
+
+    if (tabName === "matches") {
+      // Show matches, hide likes
+      if (matchesTab) matchesTab.classList.add("active")
+      if (likesTab) likesTab.classList.remove("active")
+
+      if (matchesList && matchesList.parentElement) {
+        matchesList.parentElement.classList.remove("hidden")
+      }
+      if (noMatchesMessage) noMatchesMessage.classList.toggle("hidden", matchesList.children.length > 0)
+
+      if (likesSection) likesSection.classList.add("hidden")
+    } else {
+      // Show likes, hide matches
+      if (matchesTab) matchesTab.classList.remove("active")
+      if (likesTab) likesTab.classList.add("active")
+
+      if (matchesList && matchesList.parentElement) {
+        matchesList.parentElement.classList.add("hidden")
+      }
+      if (noMatchesMessage) noMatchesMessage.classList.add("hidden")
+
+      if (likesSection) likesSection.classList.remove("hidden")
+      if (noLikesMessage) noLikesMessage.classList.toggle("hidden", likesList.children.length > 0)
+    }
   }
 
   // Load matches from Firestore
@@ -203,6 +290,126 @@ const matchesModule = (() => {
     }
   }
 
+  // Load likes from Firestore
+  const loadLikes = async () => {
+    console.log("Loading likes")
+
+    try {
+      showLikesLoadingState()
+
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        showNoLikesMessage("Please log in to see your likes")
+        return
+      }
+
+      // Get likes where other users have liked this user
+      const likesSnapshot = await db.collection("likes").where("likedUserId", "==", user.uid).get()
+
+      if (likesSnapshot.empty) {
+        console.log("No likes found")
+        showNoLikesMessage("No one has liked you yet. Keep improving your profile!")
+        return
+      }
+
+      // Get user profiles for each like
+      const likePromises = likesSnapshot.docs.map(async (doc) => {
+        try {
+          const likeData = doc.data()
+          const otherUserId = likeData.userId
+
+          // Get the other user's profile
+          const otherUserDoc = await db.collection("users").doc(otherUserId).get()
+
+          if (!otherUserDoc.exists) {
+            console.log(`User ${otherUserId} not found`)
+            return null
+          }
+
+          const otherUserData = otherUserDoc.data()
+
+          // Check if this user has sent a rose
+          let hasRose = false
+
+          // Create match ID to check for roses
+          const userIds = [user.uid, otherUserId].sort()
+          const matchId = userIds.join("_")
+
+          try {
+            const matchDoc = await db.collection("matches").doc(matchId).get()
+            if (matchDoc.exists) {
+              const matchData = matchDoc.data()
+              hasRose = matchData?.rose && matchData.rose.sent && matchData.rose.senderId === otherUserId
+            }
+          } catch (error) {
+            console.log(`Error checking for rose: ${error.message}`)
+          }
+
+          // Check if this is a mutual match (user has also liked them back)
+          let isMutualMatch = false
+          try {
+            const userLikeDoc = await db
+              .collection("likes")
+              .where("userId", "==", user.uid)
+              .where("likedUserId", "==", otherUserId)
+              .limit(1)
+              .get()
+
+            isMutualMatch = !userLikeDoc.empty
+          } catch (error) {
+            console.log(`Error checking for mutual match: ${error.message}`)
+          }
+
+          return {
+            id: doc.id,
+            likeData,
+            otherUser: {
+              id: otherUserId,
+              ...otherUserData,
+            },
+            hasRose,
+            isMutualMatch,
+            timestamp: likeData.timestamp,
+          }
+        } catch (error) {
+          console.error(`Error processing like from user ${doc.data().userId}:`, error)
+          return null
+        }
+      })
+
+      // Wait for all promises to resolve
+      const likes = (await Promise.all(likePromises)).filter((like) => like !== null)
+
+      if (likes.length === 0) {
+        showNoLikesMessage("No likes found. Keep improving your profile!")
+        return
+      }
+
+      // Sort likes: roses first, then by timestamp
+      likes.sort((a, b) => {
+        // First prioritize roses
+        if (a.hasRose && !b.hasRose) return -1
+        if (!a.hasRose && b.hasRose) return 1
+
+        // Then sort by timestamp (newest first)
+        if (a.timestamp && b.timestamp) {
+          const timeA = a.timestamp.toMillis ? a.timestamp.toMillis() : new Date(a.timestamp).getTime()
+          const timeB = b.timestamp.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp).getTime()
+          return timeB - timeA
+        }
+
+        return 0
+      })
+
+      // Render likes
+      renderLikes(likes)
+    } catch (error) {
+      console.error("Error loading likes:", error)
+      showNoLikesMessage("Error loading likes. Please try again.")
+    }
+  }
+
   // Show loading state
   const showLoadingState = () => {
     if (!matchesList) return
@@ -218,6 +425,24 @@ const matchesModule = (() => {
 
     if (noMatchesMessage) {
       noMatchesMessage.classList.add("hidden")
+    }
+  }
+
+  // Show likes loading state
+  const showLikesLoadingState = () => {
+    if (!likesList) return
+
+    likesList.innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <p>Loading likes...</p>
+      </div>
+    `
+
+    if (noLikesMessage) {
+      noLikesMessage.classList.add("hidden")
     }
   }
 
@@ -238,6 +463,25 @@ const matchesModule = (() => {
     }
 
     noMatchesMessage.classList.remove("hidden")
+  }
+
+  // Show no likes message
+  const showNoLikesMessage = (message) => {
+    console.log("Showing no likes message:", message)
+
+    if (!likesList || !noLikesMessage) {
+      console.error("Likes list or no likes message element not found")
+      return
+    }
+
+    likesList.innerHTML = ""
+
+    const messageElement = noLikesMessage.querySelector("p")
+    if (messageElement) {
+      messageElement.textContent = message
+    }
+
+    noLikesMessage.classList.remove("hidden")
   }
 
   // Render matches
@@ -307,6 +551,148 @@ const matchesModule = (() => {
 
       matchesList.appendChild(matchCard)
     })
+
+    // Show the correct tab content
+    if (activeTab === "matches") {
+      showTab("matches")
+    }
+  }
+
+  // Render likes
+  const renderLikes = (likes) => {
+    console.log("Rendering likes:", likes.length)
+
+    if (!likesList) {
+      console.error("Likes list element not found")
+      return
+    }
+
+    likesList.innerHTML = ""
+
+    if (noLikesMessage) {
+      noLikesMessage.classList.add("hidden")
+    }
+
+    likes.forEach((like) => {
+      const { otherUser, hasRose, isMutualMatch } = like
+
+      // Get user photo with proper error handling
+      const userPhoto =
+        otherUser.photos && otherUser.photos.length > 0 ? otherUser.photos[0] : "images/default-avatar.png"
+
+      // Create like card
+      const likeCard = document.createElement("div")
+      likeCard.className = `like-card ${hasRose ? "has-rose" : ""} ${isMutualMatch ? "is-match" : ""}`
+      likeCard.dataset.userId = otherUser.id
+
+      // Sanitize user data to prevent XSS
+      const displayName = document.createTextNode(otherUser.displayName || otherUser.name || "Anonymous").textContent
+
+      likeCard.innerHTML = `
+        <div class="like-photo" style="background-image: url('${userPhoto}')">
+          ${hasRose ? '<div class="like-rose-indicator"><i class="fas fa-rose"></i></div>' : ""}
+          ${isMutualMatch ? '<div class="like-match-indicator"><i class="fas fa-check-circle"></i></div>' : ""}
+        </div>
+        <div class="like-info">
+          <h3>${displayName}</h3>
+          <p>${hasRose ? "Sent you a rose!" : "Liked your profile"}</p>
+        </div>
+        <div class="like-actions">
+          ${
+            isMutualMatch
+              ? `
+            <button class="btn primary-btn message-btn" data-user-id="${otherUser.id}">
+              <i class="fas fa-comment"></i> Message
+            </button>
+          `
+              : `
+            <button class="btn primary-btn like-back-btn" data-user-id="${otherUser.id}">
+              <i class="fas fa-heart"></i> Like Back
+            </button>
+          `
+          }
+          <button class="btn secondary-btn view-profile-btn" data-user-id="${otherUser.id}">
+            <i class="fas fa-user"></i> View Profile
+          </button>
+        </div>
+      `
+
+      // Add event listeners using event delegation
+      likeCard.addEventListener("click", (e) => {
+        if (e.target.closest(".message-btn")) {
+          const userId = e.target.closest(".message-btn").getAttribute("data-user-id")
+          openChat(userId)
+        } else if (e.target.closest(".like-back-btn")) {
+          const userId = e.target.closest(".like-back-btn").getAttribute("data-user-id")
+          likeBack(userId)
+        } else if (e.target.closest(".view-profile-btn")) {
+          const userId = e.target.closest(".view-profile-btn").getAttribute("data-user-id")
+          viewProfile(userId)
+        }
+      })
+
+      likesList.appendChild(likeCard)
+    })
+
+    // Show the correct tab content
+    if (activeTab === "likes") {
+      showTab("likes")
+    }
+  }
+
+  // Like back a user
+  const likeBack = async (userId) => {
+    console.log("Liking back user:", userId)
+
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
+      // Create like document
+      await db.collection("likes").add({
+        userId: user.uid,
+        likedUserId: userId,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+
+      // Create match document
+      const userIds = [user.uid, userId].sort()
+      const matchId = userIds.join("_")
+
+      await db
+        .collection("matches")
+        .doc(matchId)
+        .set(
+          {
+            users: userIds,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            lastMessageTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            unreadCount: {
+              [user.uid]: 0,
+              [userId]: 0,
+            },
+            confirmed: true,
+          },
+          { merge: true },
+        )
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("It's a match! You can now message each other.", "success")
+      }
+
+      // Reload likes and matches
+      loadLikes()
+      loadMatches()
+    } catch (error) {
+      console.error("Error liking back user:", error)
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error liking back user. Please try again.", "error")
+      }
+    }
   }
 
   // Open chat with user
@@ -402,9 +788,13 @@ const matchesModule = (() => {
   const publicAPI = {
     init,
     loadMatches,
+    loadLikes,
     openChat,
     viewProfile,
-    refreshMatches: () => loadMatches(), // Add method to manually refresh matches
+    refreshMatches: () => {
+      loadMatches()
+      loadLikes()
+    },
   }
 
   // Expose module
