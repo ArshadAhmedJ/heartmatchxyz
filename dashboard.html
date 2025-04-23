@@ -92,15 +92,41 @@
           <section id="matches-section" class="content-section hidden">
             <div class="matches-container">
               <div class="matches-header">
-                <h2>Your Matches</h2>
+                <h2>Your Connections</h2>
               </div>
-              <div id="matches-list" class="matches-list">
-                <!-- Match cards will be dynamically added here -->
+              
+              <!-- Tab Navigation -->
+              <div class="matches-tabs">
+                <button id="matches-tab" class="tab-btn active">Matches</button>
+                <button id="likes-tab" class="tab-btn">Likes</button>
               </div>
-              <div id="no-matches-message" class="no-matches-message hidden">
-                <img src="images/no-matches.svg" alt="No matches" />
-                <h3>No matches yet</h3>
-                <p>Start swiping to find your matches!</p>
+              
+              <!-- Matches Content -->
+              <div id="matches-content" class="matches-content">
+                <div id="matches-list" class="matches-list">
+                  <!-- Match cards will be dynamically added here -->
+                </div>
+                <div id="no-matches-message" class="no-matches-message hidden">
+                  <div class="empty-state-image">
+                    <img src="images/astronaut.png" alt="No matches" class="astronaut-image" />
+                  </div>
+                  <h3>No matches yet</h3>
+                  <p>Start swiping to find your matches!</p>
+                </div>
+              </div>
+              
+              <!-- Likes Content -->
+              <div id="likes-section" class="likes-section hidden">
+                <div id="likes-list" class="likes-list">
+                  <!-- Like cards will be dynamically added here -->
+                </div>
+                <div id="no-likes-message" class="no-content-message hidden">
+                  <div class="empty-state-image">
+                    <img src="images/astronaut.png" alt="No likes yet" class="astronaut-image" />
+                  </div>
+                  <h3>No likes yet</h3>
+                  <p>No one has liked you yet. Keep improving your profile!</p>
+                </div>
               </div>
             </div>
           </section>

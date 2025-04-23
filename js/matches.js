@@ -11,6 +11,7 @@ const matchesModule = (() => {
   let noLikesMessage
   let matchesTab
   let likesTab
+  let matchesContent
   let activeTab = "matches"
 
   // Initialize matches module
@@ -31,59 +32,27 @@ const matchesModule = (() => {
     // Get DOM elements
     matchesList = document.getElementById("matches-list")
     noMatchesMessage = document.getElementById("no-matches-message")
-
-    // Create likes section if it doesn't exist
-    const matchesSection = document.querySelector(".matches-section")
-    if (matchesSection) {
-      // Create tabs if they don't exist
-      if (!document.querySelector(".matches-tabs")) {
-        const tabsHTML = `
-          <div class="matches-tabs">
-            <button id="matches-tab" class="tab-btn active">Matches</button>
-            <button id="likes-tab" class="tab-btn">Likes</button>
-          </div>
-        `
-        matchesSection.insertAdjacentHTML("afterbegin", tabsHTML)
-      }
-
-      // Create likes section if it doesn't exist
-      if (!document.getElementById("likes-section")) {
-        const likesHTML = `
-          <div id="likes-section" class="likes-section hidden">
-            <div id="likes-list" class="likes-list"></div>
-            <div id="no-likes-message" class="no-content-message hidden">
-              <div class="empty-state-icon">
-                <img src="images/astronaut.png" alt="No likes yet" class="astronaut-img">
-              </div>
-              <p>No one has liked you yet. Keep improving your profile!</p>
-            </div>
-          </div>
-        `
-        matchesSection.insertAdjacentHTML("beforeend", likesHTML)
-      }
-
-      // Get the new DOM elements
-      likesSection = document.getElementById("likes-section")
-      likesList = document.getElementById("likes-list")
-      noLikesMessage = document.getElementById("no-likes-message")
-      matchesTab = document.getElementById("matches-tab")
-      likesTab = document.getElementById("likes-tab")
-
-      // Add event listeners to tabs
-      if (matchesTab && likesTab) {
-        matchesTab.addEventListener("click", () => {
-          showTab("matches")
-        })
-
-        likesTab.addEventListener("click", () => {
-          showTab("likes")
-        })
-      }
-    }
+    likesSection = document.getElementById("likes-section")
+    likesList = document.getElementById("likes-list")
+    noLikesMessage = document.getElementById("no-likes-message")
+    matchesTab = document.getElementById("matches-tab")
+    likesTab = document.getElementById("likes-tab")
+    matchesContent = document.getElementById("matches-content")
 
     if (!matchesList) {
       console.error("Matches list element not found")
       return
+    }
+
+    // Add event listeners to tabs
+    if (matchesTab && likesTab) {
+      matchesTab.addEventListener("click", () => {
+        showTab("matches")
+      })
+
+      likesTab.addEventListener("click", () => {
+        showTab("likes")
+      })
     }
 
     // Add auth state listener to load matches when user is authenticated
@@ -102,6 +71,7 @@ const matchesModule = (() => {
 
   // Show tab
   const showTab = (tabName) => {
+    console.log("Showing tab:", tabName)
     activeTab = tabName
 
     if (tabName === "matches") {
@@ -109,24 +79,15 @@ const matchesModule = (() => {
       if (matchesTab) matchesTab.classList.add("active")
       if (likesTab) likesTab.classList.remove("active")
 
-      if (matchesList && matchesList.parentElement) {
-        matchesList.parentElement.classList.remove("hidden")
-      }
-      if (noMatchesMessage) noMatchesMessage.classList.toggle("hidden", matchesList.children.length > 0)
-
+      if (matchesContent) matchesContent.classList.remove("hidden")
       if (likesSection) likesSection.classList.add("hidden")
     } else {
       // Show likes, hide matches
       if (matchesTab) matchesTab.classList.remove("active")
       if (likesTab) likesTab.classList.add("active")
 
-      if (matchesList && matchesList.parentElement) {
-        matchesList.parentElement.classList.add("hidden")
-      }
-      if (noMatchesMessage) noMatchesMessage.classList.add("hidden")
-
+      if (matchesContent) matchesContent.classList.add("hidden")
       if (likesSection) likesSection.classList.remove("hidden")
-      if (noLikesMessage) noLikesMessage.classList.toggle("hidden", likesList.children.length > 0)
     }
   }
 
@@ -395,7 +356,7 @@ const matchesModule = (() => {
         // Then sort by timestamp (newest first)
         if (a.timestamp && b.timestamp) {
           const timeA = a.timestamp.toMillis ? a.timestamp.toMillis() : new Date(a.timestamp).getTime()
-          const timeB = b.timestamp.toMillis ? b.timestamp.toMillis() : new Date(b.timestamp).getTime()
+          const timeB = b.timestamp.toMillis ? b.timestamp.toMillis() : new Date(a.timestamp).getTime()
           return timeB - timeA
         }
 

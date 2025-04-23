@@ -386,12 +386,55 @@
 }
 
 .matches-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .matches-header h2 {
   margin: 0;
   color: #333;
+}
+
+/* Matches Tabs */
+.matches-tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: #ff6b6b;
+}
+
+.tab-btn.active {
+  color: #ff6b6b;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #ff6b6b;
+  border-radius: 3px 3px 0 0;
+}
+
+.matches-content,
+.likes-section {
+  transition: opacity 0.3s ease;
 }
 
 .matches-list {
@@ -407,12 +450,19 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.match-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .match-photo {
   height: 200px;
   background-size: cover;
   background-position: center;
+  position: relative;
 }
 
 .match-info {
@@ -436,30 +486,138 @@
   gap: 0.5rem;
 }
 
-.no-matches-message {
+/* Likes Section */
+.likes-section {
+  width: 100%;
+}
+
+.likes-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.like-card {
+  background-color: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease;
+}
+
+.like-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.like-card.has-rose {
+  border: 2px solid #e91e63;
+}
+
+.like-photo {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.like-rose-indicator {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: #e91e63;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.like-match-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.like-info {
+  padding: 1rem;
+}
+
+.like-info h3 {
+  margin: 0 0 0.5rem;
+  color: #333;
+}
+
+.like-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.like-actions {
+  display: flex;
+  padding: 0 1rem 1rem;
+  gap: 0.5rem;
+}
+
+.no-matches-message,
+.no-content-message {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 300px;
   text-align: center;
+  padding: 2rem;
 }
 
-.no-matches-message img {
+.no-matches-message img,
+.no-content-message img {
   width: 120px;
   margin-bottom: 1rem;
   opacity: 0.7;
 }
 
-.no-matches-message h3 {
+.no-matches-message h3,
+.no-content-message h3 {
   margin: 0 0 0.5rem;
   color: #555;
 }
 
-.no-matches-message p {
+.no-matches-message p,
+.no-content-message p {
   margin: 0;
   color: #888;
   font-size: 0.9rem;
+  max-width: 300px;
+}
+
+.empty-state-image {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 1.5rem;
+}
+
+.astronaut-image {
+  width: 100%;
+  height: auto;
+  animation: float 6s ease-in-out infinite;
 }
 
 /* Chat Section */
@@ -1426,6 +1584,11 @@
   .card-container {
     height: 400px;
   }
+
+  .matches-list,
+  .likes-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1460,13 +1623,14 @@
     font-size: 1.2rem;
   }
 
-  .matches-list {
-    grid-template-columns: 1fr;
-  }
-
   .notification {
     min-width: auto;
     max-width: 300px;
+  }
+
+  .tab-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 
