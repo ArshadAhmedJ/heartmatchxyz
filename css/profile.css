@@ -320,6 +320,15 @@
     padding: 10px 15px;
     font-size: 0.9rem;
   }
+
+  /* Improve spacing for mobile */
+  .profile-content-wrapper {
+    padding: 15px;
+  }
+
+  .profile-actions {
+    padding: 15px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -351,14 +360,79 @@
 
   .profile-tabs {
     padding: 0 10px;
+    overflow-x: auto;
+    justify-content: center;
   }
 
   .profile-tab {
     padding: 10px;
     font-size: 0.8rem;
+    white-space: nowrap;
   }
 
   .profile-photos-gallery {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Improve action buttons for mobile */
+  .profile-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-actions button {
+    width: 100%;
+  }
+
+  /* Improve form elements for mobile */
+  .interests-input-container {
+    flex-direction: column;
+  }
+
+  .interests-input-container input,
+  .interests-input-container button {
+    width: 100%;
+  }
+
+  /* Better spacing for mobile */
+  .profile-section {
+    margin-bottom: 20px;
+  }
+
+  /* Improve touch targets */
+  .interest-tag {
+    padding: 8px 15px;
+    margin-bottom: 5px;
+  }
+
+  .photo-delete-btn {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Add extra small device support */
+@media (max-width: 360px) {
+  .profile-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .profile-name-info {
+    padding-top: 40px;
+  }
+
+  .profile-name-info h2 {
+    font-size: 1.2rem;
+  }
+
+  .profile-tab {
+    padding: 8px;
+    font-size: 0.75rem;
+  }
+
+  .profile-photos-gallery {
+    gap: 10px;
   }
 }

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HeartMatch - Login or Sign Up</title>
+    <title>HeartMatch - Authentication</title>
     <meta name="description" content="Login or sign up to HeartMatch - Find your perfect match" />
     
     <!-- Favicon -->
@@ -20,105 +20,107 @@
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/auth.css" />
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <!-- Utility Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/auth.js"></script>
   </head>
   <body>
     <!-- Auth Page -->
-    <div id="auth-page" class="auth-container">
-      <header class="auth-header">
-        <div class="auth-logo">
-          <a href="index.html">
-            <img src="images/logo.png" alt="HeartMatch Logo" />
-            <h1>HeartMatch</h1>
-          </a>
+    <div id="auth-page" class="auth-page">
+        <div class="auth-container">
+            <div class="auth-logo">
+                <img src="images/BLK7-logo.png" alt="HeartMatch Logo">
+            </div>
+            <div class="auth-tabs">
+                <div id="login-tab" class="auth-tab active" onclick="window.authModule.showLoginForm()">Login</div>
+                <div id="signup-tab" class="auth-tab" onclick="window.authModule.showSignupForm()">Sign Up</div>
+            </div>
+            <div class="auth-forms">
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="form-group remember-me">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">Remember me</label>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                    <div class="form-group text-center">
+                        <a href="#" id="forgot-password-link" class="auth-link" onclick="window.authModule.showForgotPasswordForm(); return false;">Forgot Password?</a>
+                    </div>
+                    <div class="form-divider">
+                        <span>OR</span>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="google-auth-btn" class="btn btn-google" onclick="window.authModule.signInWithGoogle()">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            Sign in with Google
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signup-form" class="auth-form hidden">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Create a password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" placeholder="Confirm your password" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Sign Up</button>
+                    </div>
+                    <div class="form-divider">
+                        <span>OR</span>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" id="google-auth-btn-signup" class="btn btn-google">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            Sign up with Google
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Forgot Password Form -->
+                <form id="forgot-password-form" class="auth-form hidden">
+                    <div class="form-group">
+                        <label for="forgot-email">Email</label>
+                        <input type="email" id="forgot-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary">Reset Password</button>
+                    </div>
+                    <div class="form-group text-center">
+                        <a href="#" id="back-to-login-link" class="auth-link" onclick="window.authModule.showLoginForm(); return false;">Back to Login</a>
+                    </div>
+                </form>
+            </div>
         </div>
-      </header>
-
-      <div class="auth-content">
-        <div class="auth-card">
-          <div class="auth-tabs">
-            <div id="login-tab" class="auth-tab active" onclick="window.authModule.showLoginForm()">Login</div>
-            <div id="signup-tab" class="auth-tab" onclick="window.authModule.showSignupForm()">Sign Up</div>
-          </div>
-
-          <div class="auth-form-container">
-            <!-- Login Form -->
-            <form id="login-form" class="auth-form">
-              <div class="form-group">
-                <label for="login-email">Email</label>
-                <input type="email" id="login-email" class="form-input" placeholder="Enter your email" required />
-              </div>
-              <div class="form-group">
-                <label for="login-password">Password</label>
-                <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required />
-              </div>
-              <div class="form-footer">
-                <div class="remember-me">
-                  <input type="checkbox" id="remember-me" />
-                  <label for="remember-me">Remember me</label>
-                </div>
-                <a href="#" id="forgot-password-link" class="forgot-password" onclick="window.authModule.showForgotPasswordForm(); return false;">Forgot Password?</a>
-              </div>
-              <button type="submit" class="auth-btn">Login</button>
-            </form>
-
-            <!-- Signup Form -->
-            <form id="signup-form" class="auth-form hidden">
-              <div class="form-group">
-                <label for="signup-email">Email</label>
-                <input type="email" id="signup-email" class="form-input" placeholder="Enter your email" required />
-              </div>
-              <div class="form-group">
-                <label for="signup-password">Password</label>
-                <input type="password" id="signup-password" class="form-input" placeholder="Create a password" required />
-              </div>
-              <div class="form-group">
-                <label for="signup-confirm-password">Confirm Password</label>
-                <input type="password" id="signup-confirm-password" class="form-input" placeholder="Confirm your password" required />
-              </div>
-              <button type="submit" class="auth-btn">Sign Up</button>
-            </form>
-
-            <!-- Forgot Password Form -->
-            <form id="forgot-password-form" class="auth-form hidden">
-              <div class="form-group">
-                <label for="forgot-email">Email</label>
-                <input type="email" id="forgot-email" class="form-input" placeholder="Enter your email" required />
-              </div>
-              <button type="submit" class="auth-btn">Reset Password</button>
-              <a href="#" id="back-to-login-link" class="back-to-login" onclick="window.authModule.showLoginForm(); return false;">Back to Login</a>
-            </form>
-
-            <div class="auth-divider">
-              <span>OR</span>
-            </div>
-
-            <div class="social-auth">
-              <button id="google-auth-btn" class="social-auth-btn google-btn" onclick="window.authModule.signInWithGoogle()">
-                <i class="fab fa-google"></i> Continue with Google
-              </button>
-            </div>
-
-            <div class="auth-footer">
-              <p>By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Notifications Container -->
     <div id="notifications-container"></div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <!-- JavaScript -->
-    <script src="js/utils.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/main.js"></script>
-    
     <!-- Direct initialization script -->
     <script>
       // Fallback initialization

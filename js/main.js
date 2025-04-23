@@ -26,6 +26,17 @@ document.addEventListener("DOMContentLoaded", () => {
     window.storage = firebase.storage ? firebase.storage() : null
 
     console.log("Firebase initialized successfully")
+
+    // Enable persistence to work offline
+    firebase
+      .firestore()
+      .enablePersistence()
+      .then(() => {
+        console.log("Firestore persistence enabled")
+      })
+      .catch((err) => {
+        console.error("Error enabling Firestore persistence:", err)
+      })
   } catch (error) {
     console.error("Error initializing Firebase:", error)
   }
@@ -53,6 +64,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       console.error("Landing module not found or init method not available")
     }
+
+    // Check for auto-login on landing page
+    checkForAutoLogin()
   } else if (currentPage === "auth") {
     // Auth page
     console.log("Initializing auth page")
@@ -78,6 +92,69 @@ document.addEventListener("DOMContentLoaded", () => {
   // Setup auth state listener
   setupAuthStateListener()
 })
+
+// Check for auto-login
+function checkForAutoLogin() {
+  console.log("Checking for auto-login from main.js")
+
+  // If we're already on a page that requires auth, don't auto-login
+  if (window.location.pathname.includes("dashboard.html") || window.location.pathname.includes("onboarding.html")) {
+    console.log("Already on authenticated page, skipping auto-login check")
+    return
+  }
+
+  // Check if user is already logged in via Firebase
+  const currentUser = firebase.auth().currentUser
+  if (currentUser) {
+    console.log("User already logged in via Firebase, redirecting to dashboard")
+    window.location.href = "dashboard.html"
+    return
+  }
+
+  // If we have the auth module, use it to check for auto-login
+  if (window.authModule && typeof window.authModule.checkForAutoLogin === "function") {
+    window.authModule.checkForAutoLogin()
+  } else {
+    console.log("Auth module not available for auto-login check")
+
+    // Fallback: Check for saved auth data directly
+    try {
+      const savedAuth = localStorage.getItem("heartMatchAuth")
+      if (savedAuth) {
+        const authData = JSON.parse(savedAuth)
+
+        // Check if the saved data is expired (30 days)
+        const now = Date.now()
+        const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000
+        if (authData.timestamp && now - authData.timestamp <= thirtyDaysInMs) {
+          console.log("Found valid saved auth data, attempting auto-login")
+
+          if (authData.email && authData.password) {
+            firebase
+              .auth()
+              .signInWithEmailAndPassword(authData.email, authData.password)
+              .then((userCredential) => {
+                console.log("Auto-login successful with email/password")
+                window.location.href = "dashboard.html"
+              })
+              .catch((error) => {
+                console.error("Auto-login with email/password failed:", error)
+                // Clear invalid saved auth data
+                localStorage.removeItem("heartMatchAuth")
+              })
+          }
+        } else {
+          console.log("Saved auth data expired, clearing")
+          localStorage.removeItem("heartMatchAuth")
+        }
+      } else {
+        console.log("No saved auth data found")
+      }
+    } catch (error) {
+      console.error("Error checking for saved auth data:", error)
+    }
+  }
+}
 
 // Get current page
 function getCurrentPage() {
@@ -187,6 +264,8 @@ function initDashboard() {
                 .auth()
                 .signOut()
                 .then(() => {
+                  // Clear saved auth data on logout
+                  localStorage.removeItem("heartMatchAuth")
                   window.location.href = "index.html"
                 })
                 .catch((error) => {
@@ -203,6 +282,8 @@ function initDashboard() {
             .auth()
             .signOut()
             .then(() => {
+              // Clear saved auth data on logout
+              localStorage.removeItem("heartMatchAuth")
               window.location.href = "index.html"
             })
             .catch((error) => {

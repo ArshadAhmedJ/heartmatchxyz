@@ -1,29 +1,7 @@
 // Immediately expose the landingModule to the global scope
 window.landingModule = (() => {
   // DOM elements
-  let getStartedBtn, loginBtn, heroCTABtn, ctaButton, testimonialContainer, mobileMenuBtn
-
-  // Testimonial data
-  const testimonials = [
-    {
-      id: 1,
-      name: "Sarah & Michael",
-      image: "/images/testimonial-1.jpg",
-      text: "We matched on HeartMatch 2 years ago and just got married last month! This platform changed our lives forever.",
-    },
-    {
-      id: 2,
-      name: "David & Emma",
-      image: "/images/testimonial-2.jpg",
-      text: "I was skeptical about dating apps until I tried HeartMatch. The interface is so intuitive, and I found my perfect match within weeks!",
-    },
-    {
-      id: 3,
-      name: "Jessica & Tom",
-      image: "/images/testimonial-3.jpg",
-      text: "HeartMatch's matching algorithm is incredible. It connected us based on our shared interests, and we've been together for a year now!",
-    },
-  ]
+  let getStartedBtn, loginBtn, heroCTABtn, ctaButton, mobileMenuBtn
 
   // Initialize landing page
   const init = () => {
@@ -34,38 +12,12 @@ window.landingModule = (() => {
     loginBtn = document.getElementById("login-btn")
     heroCTABtn = document.getElementById("hero-cta-btn")
     ctaButton = document.getElementById("cta-button")
-    testimonialContainer = document.getElementById("testimonial-container")
     mobileMenuBtn = document.getElementById("mobile-menu-btn")
 
-    renderTestimonials()
     bindEvents()
 
     // Add a fallback for event listeners in case they weren't attached properly
     setTimeout(bindEventsFallback, 500)
-  }
-
-  // Render testimonials
-  const renderTestimonials = () => {
-    if (!testimonialContainer) {
-      console.log("Testimonial container not found")
-      return
-    }
-
-    testimonialContainer.innerHTML = testimonials
-      .map(
-        (testimonial) => `
-      <div class="testimonial">
-        <div class="testimonial-image">
-          <img src="${testimonial.image || "/images/placeholder-couple.jpg"}" alt="${testimonial.name}">
-        </div>
-        <div class="testimonial-content">
-          <h3>${testimonial.name}</h3>
-          <p>${testimonial.text}</p>
-        </div>
-      </div>
-    `,
-      )
-      .join("")
   }
 
   // Direct navigation function

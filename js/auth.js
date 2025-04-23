@@ -30,7 +30,8 @@ window.authModule = (() => {
     signupTab,
     forgotPasswordLink,
     backToLoginLink,
-    googleAuthBtn
+    googleAuthBtn,
+    rememberMeCheckbox
 
   // Initialize auth module
   const init = () => {
@@ -46,6 +47,7 @@ window.authModule = (() => {
     forgotPasswordLink = document.getElementById("forgot-password-link")
     backToLoginLink = document.getElementById("back-to-login-link")
     googleAuthBtn = document.getElementById("google-auth-btn")
+    rememberMeCheckbox = document.getElementById("remember-me")
 
     // Log the Google auth button to check if it's found
     console.log("Google auth button:", googleAuthBtn)
@@ -63,6 +65,121 @@ window.authModule = (() => {
 
     // Add a fallback for event listeners in case they weren't attached properly
     setTimeout(bindEventsFallback, 500)
+
+    // Check for auto-login
+    checkForAutoLogin()
+  }
+
+  // Check if we should auto-login the user
+  const checkForAutoLogin = () => {
+    console.log("Checking for auto-login")
+
+    // If we're already on a page that requires auth, don't auto-login
+    if (window.location.pathname.includes("dashboard.html") || window.location.pathname.includes("onboarding.html")) {
+      console.log("Already on authenticated page, skipping auto-login check")
+      return
+    }
+
+    // Check if user is already logged in via Firebase
+    const currentUser = firebase.auth().currentUser
+    if (currentUser) {
+      console.log("User already logged in via Firebase, no need for auto-login")
+      return
+    }
+
+    // Check for saved credentials
+    const savedAuth = getSavedAuth()
+    if (savedAuth) {
+      console.log("Found saved auth data, attempting auto-login")
+
+      // If we have a token, try to sign in with it
+      if (savedAuth.token) {
+        firebase
+          .auth()
+          .signInWithCustomToken(savedAuth.token)
+          .then((userCredential) => {
+            console.log("Auto-login successful with token")
+            handleSuccessfulLogin(userCredential.user)
+          })
+          .catch((error) => {
+            console.error("Auto-login with token failed:", error)
+            // Clear invalid saved auth data
+            clearSavedAuth()
+          })
+      }
+      // If we have email/password, try to sign in with those
+      else if (savedAuth.email && savedAuth.password) {
+        firebase
+          .auth()
+          .signInWithEmailAndPassword(savedAuth.email, savedAuth.password)
+          .then((userCredential) => {
+            console.log("Auto-login successful with email/password")
+            handleSuccessfulLogin(userCredential.user)
+          })
+          .catch((error) => {
+            console.error("Auto-login with email/password failed:", error)
+            // Clear invalid saved auth data
+            clearSavedAuth()
+          })
+      }
+    } else {
+      console.log("No saved auth data found")
+    }
+  }
+
+  // Save authentication data for auto-login
+  const saveAuthData = (email, password) => {
+    if (!rememberMeCheckbox || !rememberMeCheckbox.checked) {
+      console.log("Remember me not checked, not saving auth data")
+      return
+    }
+
+    try {
+      const authData = {
+        email: email,
+        password: password,
+        timestamp: Date.now(),
+      }
+
+      localStorage.setItem("heartMatchAuth", JSON.stringify(authData))
+      console.log("Auth data saved for auto-login")
+    } catch (error) {
+      console.error("Error saving auth data:", error)
+    }
+  }
+
+  // Get saved authentication data
+  const getSavedAuth = () => {
+    try {
+      const savedAuth = localStorage.getItem("heartMatchAuth")
+      if (!savedAuth) return null
+
+      const authData = JSON.parse(savedAuth)
+
+      // Check if the saved data is expired (30 days)
+      const now = Date.now()
+      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000
+      if (authData.timestamp && now - authData.timestamp > thirtyDaysInMs) {
+        console.log("Saved auth data expired, clearing")
+        clearSavedAuth()
+        return null
+      }
+
+      return authData
+    } catch (error) {
+      console.error("Error getting saved auth data:", error)
+      return null
+    }
+  }
+
+  // Clear saved authentication data
+  const clearSavedAuth = () => {
+    try {
+      localStorage.removeItem("heartMatchAuth")
+      console.log("Saved auth data cleared")
+    } catch (error) {
+      console.error("Error clearing saved auth data:", error)
+    }
   }
 
   // Show login form
@@ -132,25 +249,37 @@ window.authModule = (() => {
     }
   }
 
+  // Handle successful login
+  const handleSuccessfulLogin = async (user) => {
+    utils.showNotification("Login successful!", "success")
+
+    // Check if user has a profile after successful login
+    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get()
+
+    if (userDoc.exists) {
+      console.log("User profile exists, redirecting to dashboard")
+      window.location.href = "dashboard.html"
+    } else {
+      console.log("User profile doesn't exist, redirecting to onboarding")
+      window.location.href = "onboarding.html"
+    }
+  }
+
   // Login with email and password
-  const login = async (email, password) => {
+  const login = async (email, password, remember = false) => {
     console.log("Login attempt with email:", email)
 
     try {
-      await firebase.auth().signInWithEmailAndPassword(email, password)
-      utils.showNotification("Login successful!", "success")
+      const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password)
 
-      // Check if user has a profile after successful login
-      const user = firebase.auth().currentUser
-      const userDoc = await firebase.firestore().collection("users").doc(user.uid).get()
-
-      if (userDoc.exists) {
-        console.log("User profile exists, redirecting to dashboard")
-        window.location.href = "dashboard.html"
+      // Save auth data if remember me is checked
+      if (remember) {
+        saveAuthData(email, password)
       } else {
-        console.log("User profile doesn't exist, redirecting to onboarding")
-        window.location.href = "onboarding.html"
+        clearSavedAuth()
       }
+
+      await handleSuccessfulLogin(userCredential.user)
     } catch (error) {
       console.error("Login error:", error)
       let errorMessage = "Login failed. Please try again."
@@ -273,6 +402,24 @@ window.authModule = (() => {
       console.log("Google sign-in successful:", user)
       utils.showNotification("Google sign-in successful!", "success")
 
+      // Save a token for auto-login with Google
+      if (rememberMeCheckbox && rememberMeCheckbox.checked) {
+        try {
+          // We can't save the Google credentials directly, but we can save a timestamp
+          // to indicate that the user has logged in with Google
+          localStorage.setItem(
+            "heartMatchGoogleAuth",
+            JSON.stringify({
+              timestamp: Date.now(),
+              provider: "google",
+            }),
+          )
+          console.log("Google auth data saved for reference")
+        } catch (error) {
+          console.error("Error saving Google auth reference:", error)
+        }
+      }
+
       // Check if user already has a profile
       const userDoc = await firebase.firestore().collection("users").doc(user.uid).get()
 
@@ -308,6 +455,10 @@ window.authModule = (() => {
 
     try {
       await firebase.auth().signOut()
+
+      // Clear saved auth data on logout
+      clearSavedAuth()
+
       utils.showNotification("Logout successful!", "success")
       window.location.href = "index.html"
     } catch (error) {
@@ -326,6 +477,7 @@ window.authModule = (() => {
         e.preventDefault()
         const email = loginForm.querySelector("#login-email").value.trim()
         const password = loginForm.querySelector("#login-password").value
+        const rememberMe = loginForm.querySelector("#remember-me")?.checked || false
 
         if (!email || !password) {
           utils.showNotification("Please enter both email and password.", "error")
@@ -337,7 +489,7 @@ window.authModule = (() => {
           return
         }
 
-        login(email, password)
+        login(email, password, rememberMe)
       }
     }
 
@@ -451,7 +603,8 @@ window.authModule = (() => {
         e.preventDefault()
         const email = document.getElementById("login-email").value.trim()
         const password = document.getElementById("login-password").value
-        login(email, password)
+        const rememberMe = document.getElementById("remember-me")?.checked || false
+        login(email, password, rememberMe)
       },
       "signup-form": (e) => {
         e.preventDefault()
@@ -519,6 +672,7 @@ window.authModule = (() => {
     resetPassword,
     signInWithGoogle,
     logout,
+    checkForAutoLogin,
   }
 })()
 
