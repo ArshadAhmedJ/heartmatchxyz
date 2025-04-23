@@ -550,33 +550,33 @@ const matchesModule = (() => {
       const displayName = document.createTextNode(otherUser.displayName || otherUser.name || "Anonymous").textContent
 
       likeCard.innerHTML = `
-        <div class="like-photo" style="background-image: url('${userPhoto}')">
-          ${hasRose ? '<div class="like-rose-indicator"><i class="fas fa-rose"></i></div>' : ""}
-          ${isMutualMatch ? '<div class="like-match-indicator"><i class="fas fa-check-circle"></i></div>' : ""}
-        </div>
-        <div class="like-info">
-          <h3>${displayName}</h3>
-          <p>${hasRose ? "Sent you a rose!" : "Liked your profile"}</p>
-        </div>
-        <div class="like-actions">
-          ${
-            isMutualMatch
-              ? `
-            <button class="btn primary-btn message-btn" data-user-id="${otherUser.id}">
-              <i class="fas fa-comment"></i> Message
-            </button>
-          `
-              : `
-            <button class="btn primary-btn like-back-btn" data-user-id="${otherUser.id}">
-              <i class="fas fa-heart"></i> Like Back
-            </button>
-          `
-          }
-          <button class="btn secondary-btn view-profile-btn" data-user-id="${otherUser.id}">
-            <i class="fas fa-user"></i> View Profile
-          </button>
-        </div>
+  <div class="like-photo" style="background-image: url('${userPhoto}')">
+    ${hasRose ? '<div class="like-rose-indicator"><i class="fas fa-rose"></i></div>' : ""}
+    ${isMutualMatch ? '<div class="like-match-indicator"><i class="fas fa-check-circle"></i></div>' : ""}
+  </div>
+  <div class="like-info">
+    <h3>${displayName}</h3>
+    <p>${hasRose ? "Sent you a rose!" : "Liked your profile"}</p>
+  </div>
+  <div class="like-actions">
+    ${
+      isMutualMatch
+        ? `
+        <button class="btn primary-btn message-btn" data-user-id="${otherUser.id}">
+          <i class="fas fa-comment"></i> Message
+        </button>
       `
+        : `
+        <button class="btn primary-btn like-back-btn" data-user-id="${otherUser.id}">
+          <i class="fas fa-heart"></i> Like Back
+        </button>
+      `
+    }
+    <button class="btn secondary-btn view-profile-btn" data-user-id="${otherUser.id}">
+      <i class="fas fa-user"></i> View Profile
+    </button>
+  </div>
+`
 
       // Add event listeners using event delegation
       likeCard.addEventListener("click", (e) => {
@@ -643,6 +643,35 @@ const matchesModule = (() => {
       // Show success notification
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("It's a match! You can now message each other.", "success")
+      }
+
+      // Update the like card to show it's now a match
+      const likeCard = document.querySelector(`.like-card[data-user-id="${userId}"]`)
+      if (likeCard) {
+        likeCard.classList.add("is-match")
+
+        // Replace the like-back button with a message button
+        const actionDiv = likeCard.querySelector(".like-actions")
+        if (actionDiv) {
+          const likeBackBtn = actionDiv.querySelector(".like-back-btn")
+          if (likeBackBtn) {
+            const messageBtn = document.createElement("button")
+            messageBtn.className = "btn primary-btn message-btn"
+            messageBtn.setAttribute("data-user-id", userId)
+            messageBtn.innerHTML = '<i class="fas fa-comment"></i> Message'
+            messageBtn.addEventListener("click", () => openChat(userId))
+            actionDiv.replaceChild(messageBtn, likeBackBtn)
+          }
+        }
+
+        // Add the match indicator
+        const photoDiv = likeCard.querySelector(".like-photo")
+        if (photoDiv && !photoDiv.querySelector(".like-match-indicator")) {
+          const matchIndicator = document.createElement("div")
+          matchIndicator.className = "like-match-indicator"
+          matchIndicator.innerHTML = '<i class="fas fa-check-circle"></i>'
+          photoDiv.appendChild(matchIndicator)
+        }
       }
 
       // Reload likes and matches

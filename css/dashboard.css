@@ -516,6 +516,16 @@
   border: 2px solid #e91e63;
 }
 
+/* Add a transition for the like card when it becomes a match */
+.like-card {
+  transition: all 0.3s ease;
+}
+
+.like-card.is-match {
+  border-color: #4caf50;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+}
+
 .like-photo {
   height: 200px;
   background-size: cover;
@@ -539,20 +549,21 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
+/* Add styles for the match indicator */
 .like-match-indicator {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  bottom: 5px;
+  right: 5px;
   background-color: #4caf50;
   color: white;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .like-info {
