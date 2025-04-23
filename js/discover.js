@@ -65,23 +65,23 @@ const discoverModule = (() => {
       roseBtn.appendChild(roseImg)
       roseBtn.appendChild(roseCount)
 
-      // Add some styling to the button
+      // Style the rose button
       roseBtn.style.display = "flex"
       roseBtn.style.alignItems = "center"
       roseBtn.style.justifyContent = "center"
       roseBtn.style.gap = "5px"
+      roseBtn.style.backgroundColor = "white"
+      roseBtn.style.opacity = "0.5"
+      roseBtn.style.borderRadius = "50%"
+      roseBtn.style.width = "50px"
+      roseBtn.style.height = "50px"
+      roseBtn.style.padding = "0"
     }
 
     // Remove user profile icon if it exists
     if (viewProfileBtn) {
-      // We'll keep the button but remove the icon
-      const icon = viewProfileBtn.querySelector("i")
-      if (icon) {
-        icon.remove()
-      }
-
-      // Update the text to be more clear without the icon
-      viewProfileBtn.textContent = "View Profile"
+      // Hide viewProfileBtn if it exists
+      viewProfileBtn.style.display = "none"
     }
 
     console.log("Discover module initialized")
@@ -520,8 +520,8 @@ const discoverModule = (() => {
     // Disable buttons while loading
     if (likeBtn) likeBtn.disabled = true
     if (dislikeBtn) dislikeBtn.disabled = true
-    if (viewProfileBtn) viewProfileBtn.disabled = true
     if (roseBtn) roseBtn.disabled = true
+    // We're not using viewProfileBtn anymore
   }
 
   // Show a profile in the card

@@ -67,6 +67,9 @@
 
 /* Rose count badge */
 .rose-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
   display: inline-block;
   background-color: #f06595;
   color: white;
@@ -76,5 +79,31 @@
   text-align: center;
   line-height: 20px;
   font-size: 12px;
-  margin-left: 5px;
+}
+
+/* Rose button styling */
+#rose-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  opacity: 0.5;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  transition: opacity 0.3s ease;
+}
+
+#rose-btn:hover {
+  opacity: 0.8;
+}
+
+#rose-btn:disabled {
+  opacity: 0.3;
+}
+
+#rose-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(240, 101, 149, 0.5);
 }
