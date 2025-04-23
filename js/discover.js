@@ -598,7 +598,7 @@ const discoverModule = (() => {
     card.innerHTML = `
       <div class="profile-images">
         <div class="profile-image-main" style="background-image: url('${mainPhoto}')">
-          <div class="profile-info">
+          <div class="profile-info transparent-bg">
             <h2>${profile.displayName || profile.name || "Anonymous"}, ${age}</h2>
             <p>${profile.location || "Nearby"}</p>
           </div>

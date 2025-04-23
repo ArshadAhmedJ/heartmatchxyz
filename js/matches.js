@@ -789,6 +789,52 @@ const matchesModule = (() => {
 
   // Create confetti effect
   const createConfetti = () => {
+    // Add custom styles for match popup buttons if not already in CSS
+    const style = document.createElement("style")
+    style.textContent = `
+  .match-popup .match-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+  }
+  
+  .match-popup .send-message-btn {
+    background-color: #ff4b4b;
+    color: white;
+    font-weight: bold;
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: none;
+    box-shadow: 0 4px 8px rgba(255, 75, 75, 0.3);
+    transition: all 0.3s ease;
+    width: 100%;
+    font-size: 16px;
+  }
+  
+  .match-popup .send-message-btn:hover {
+    background-color: #ff3333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 75, 75, 0.4);
+  }
+  
+  .match-popup .keep-swiping-btn {
+    background-color: transparent;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+  
+  .match-popup .keep-swiping-btn:hover {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+`
+    document.head.appendChild(style)
     const colors = ["#ff6b6b", "#4caf50", "#2196f3", "#ff9800", "#e91e63"]
     const confettiCount = 100
 
