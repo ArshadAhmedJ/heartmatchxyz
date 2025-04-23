@@ -14,8 +14,8 @@ const discoverModule = (() => {
   let currentIndex = 0
   let isLoading = false
 
-  // Excluded user IDs
-  const EXCLUDED_USER_IDS = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
+  // Developer profile IDs - these are special profiles to show when no other profiles are available
+  const DEVELOPER_PROFILE_IDS = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
 
   // Initialize discover module
   const init = () => {
@@ -449,8 +449,13 @@ const discoverModule = (() => {
       const likedUserIds = likesSnapshot.docs.map((doc) => doc.data().likedUserId)
       const dislikedUserIds = dislikesSnapshot.docs.map((doc) => doc.data().dislikedUserId)
 
-      // Combine filtered IDs
-      const filteredIds = [...likedUserIds, ...dislikedUserIds, user.uid, ...EXCLUDED_USER_IDS]
+      // Combine filtered IDs - don't exclude developer profiles for female users
+      let filteredIds = [...likedUserIds, ...dislikedUserIds, user.uid]
+
+      // Only exclude developer profiles for male users
+      if (userGender !== "female") {
+        filteredIds = [...filteredIds, ...DEVELOPER_PROFILE_IDS]
+      }
 
       // Get all users - we'll filter client-side to avoid complex queries that might be rejected by security rules
       const snapshot = await db.collection("users").get()
@@ -489,7 +494,14 @@ const discoverModule = (() => {
       if (profiles.length === 0) {
         // Get the gender the user is interested in
         const interestedIn = userData.preferences?.interestedIn || "all"
-        showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
+
+        // For female users, we'll show developer profiles if there are no regular profiles
+        if (userGender === "female" && (interestedIn === "male" || interestedIn === "all")) {
+          showEmptyStateWithDevelopers(userGender)
+        } else {
+          showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
+        }
+
         isLoading = false
         return
       }
@@ -507,6 +519,26 @@ const discoverModule = (() => {
       showEmptyState("Error loading profiles. Please try again.")
     } finally {
       isLoading = false
+    }
+  }
+
+  // Load developer profiles
+  const loadDeveloperProfile = async (profileId) => {
+    try {
+      const profileDoc = await db.collection("users").doc(profileId).get()
+
+      if (!profileDoc.exists) {
+        console.error("Developer profile not found:", profileId)
+        return null
+      }
+
+      return {
+        id: profileDoc.id,
+        ...profileDoc.data(),
+      }
+    } catch (error) {
+      console.error("Error loading developer profile:", error)
+      return null
     }
   }
 
@@ -633,6 +665,108 @@ const discoverModule = (() => {
     checkDailyRose()
   }
 
+  // Show empty state with developer profiles for female users
+  const showEmptyStateWithDevelopers = async (userGender) => {
+    console.log("Showing empty state with developers for female users")
+
+    if (!cardContainer) {
+      console.error("Card container not found")
+      return
+    }
+
+    // Load developer profiles
+    const developerProfiles = []
+    for (const profileId of DEVELOPER_PROFILE_IDS) {
+      const profile = await loadDeveloperProfile(profileId)
+      if (profile) {
+        developerProfiles.push(profile)
+      }
+    }
+
+    // Create developer profile cards
+    const developerCards = developerProfiles
+      .map((profile, index) => {
+        const mainPhoto = profile.photos && profile.photos.length > 0 ? profile.photos[0] : "images/default-avatar.png"
+
+        // Calculate age
+        let age = "?"
+        if (profile.birthDate) {
+          const birthDate = profile.birthDate.toDate ? profile.birthDate.toDate() : new Date(profile.birthDate)
+          const today = new Date()
+          age = today.getFullYear() - birthDate.getFullYear()
+          const m = today.getMonth() - birthDate.getMonth()
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+          }
+        } else if (profile.age) {
+          age = profile.age
+        }
+
+        return `
+        <div class="developer-card" data-profile-id="${profile.id}">
+          <div class="developer-image" style="background-image: url('${mainPhoto}')"></div>
+          <div class="developer-info">
+            <h3>${profile.displayName || profile.name || "Developer"}, ${age}</h3>
+            <p>${profile.bio ? profile.bio.substring(0, 60) + (profile.bio.length > 60 ? "..." : "") : "HeartMatch Developer"}</p>
+          </div>
+        </div>
+      `
+      })
+      .join("")
+
+    cardContainer.innerHTML = `
+      <div class="empty-state">
+        <img src="images/no-profiles.svg" alt="No profiles" class="empty-state-image" />
+        <h3>No more matches at the moment</h3>
+        <p>You've seen all available profiles for now.</p>
+        <p class="developer-intro">Fun fact: Our developers are also single! Why not check them out?</p>
+        
+        <div class="developer-profiles">
+          ${developerCards}
+        </div>
+        
+        <button id="refresh-profiles-btn" class="btn primary-btn">
+          <i class="fas fa-sync-alt"></i> Try Again
+        </button>
+      </div>
+    `
+
+    // Add event listener to refresh button
+    const refreshBtn = cardContainer.querySelector("#refresh-profiles-btn")
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", loadProfiles)
+    }
+
+    // Add event listeners to developer cards
+    const devCards = cardContainer.querySelectorAll(".developer-card")
+    devCards.forEach((card) => {
+      card.addEventListener("click", async () => {
+        const profileId = card.getAttribute("data-profile-id")
+        const profile = await loadDeveloperProfile(profileId)
+
+        if (profile) {
+          // Set as current profile and show it
+          currentProfile = profile
+          showProfile(profile)
+
+          // Enable buttons
+          if (likeBtn) likeBtn.disabled = false
+          if (dislikeBtn) dislikeBtn.disabled = false
+          if (viewProfileBtn) viewProfileBtn.disabled = false
+
+          // Check if user has roses and enable/disable rose button
+          checkDailyRose()
+        }
+      })
+    })
+
+    // Disable action buttons
+    if (likeBtn) likeBtn.disabled = true
+    if (dislikeBtn) dislikeBtn.disabled = true
+    if (viewProfileBtn) viewProfileBtn.disabled = true
+    if (roseBtn) roseBtn.disabled = true
+  }
+
   // Show empty state when no profiles are available
   const showEmptyState = (message, userGender = "unknown", interestedIn = "all") => {
     console.log("Showing empty state:", message, "User gender:", userGender, "Interested in:", interestedIn)
@@ -654,7 +788,8 @@ const discoverModule = (() => {
         <p>Even in the vastness of space, finding the right match takes time.</p>
       `
     } else if (userGender === "female" && (interestedIn === "male" || interestedIn === "all")) {
-      // Female user looking for males
+      // This case is now handled by showEmptyStateWithDevelopers
+      // But we'll keep a fallback just in case
       emptyStateContent = `
         <img src="images/no-profiles.svg" alt="No profiles" class="empty-state-image" />
         <h3>No matches at the moment</h3>
@@ -889,7 +1024,13 @@ const discoverModule = (() => {
               const userData = doc.data()
               const userGender = userData.gender || "unknown"
               const interestedIn = userData.preferences?.interestedIn || "all"
-              showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
+
+              // For female users, show developer profiles
+              if (userGender === "female" && (interestedIn === "male" || interestedIn === "all")) {
+                showEmptyStateWithDevelopers(userGender)
+              } else {
+                showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
+              }
             } else {
               showEmptyState("No more profiles to show. Try again later!")
             }

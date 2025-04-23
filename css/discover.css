@@ -141,3 +141,73 @@
 .empty-state button {
   margin-top: 1.5rem;
 }
+
+/* Developer profiles styling */
+.developer-intro {
+  font-weight: 500;
+  color: #f06595;
+  margin: 1rem 0;
+}
+
+.developer-profiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 600px;
+}
+
+.developer-card {
+  width: 45%;
+  max-width: 180px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.developer-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.developer-image {
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+}
+
+.developer-info {
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.developer-info h3 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.developer-info p {
+  font-size: 0.8rem;
+  margin: 0;
+  color: #666;
+  line-height: 1.2;
+}
+
+@media (max-width: 480px) {
+  .developer-profiles {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .developer-card {
+    width: 80%;
+    max-width: 240px;
+  }
+}
