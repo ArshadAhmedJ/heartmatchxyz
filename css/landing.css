@@ -25,6 +25,8 @@
 
 .landing-logo img {
   height: 40px;
+  width: auto;
+  margin-right: 10px;
 }
 
 .landing-logo h1 {
@@ -451,6 +453,10 @@
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+  }
+
+  .landing-logo img {
+    height: 32px;
   }
 }
 

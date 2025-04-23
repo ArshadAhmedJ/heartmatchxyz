@@ -387,10 +387,14 @@ const chatModule = (() => {
 
     conversationsList.innerHTML = ""
 
-    const messageElement = noConversationsMessage.querySelector("p")
-    if (messageElement) {
-      messageElement.textContent = message
-    }
+    // Update to use astronaut image
+    noConversationsMessage.innerHTML = `
+      <div class="empty-state-image">
+        <img src="images/astronaut.png" alt="No messages" />
+      </div>
+      <h3>No messages yet</h3>
+      <p>${message}</p>
+    `
 
     noConversationsMessage.classList.remove("hidden")
 
@@ -677,15 +681,15 @@ const chatModule = (() => {
           messagesContainer.innerHTML = ""
 
           if (snapshot.empty) {
-            // Show empty state
+            // Show empty state with astronaut
             messagesContainer.innerHTML = `
-              <div class="empty-chat">
-                <div class="empty-chat-icon">
-                  <i class="fas fa-comment-dots"></i>
-                </div>
-                <p>No messages yet. Say hello!</p>
+            <div class="empty-chat">
+              <div class="empty-chat-image">
+                <img src="images/astronaut.png" alt="No messages" class="astronaut-image" />
               </div>
-            `
+              <p>No messages yet. Say hello!</p>
+            </div>
+          `
             return
           }
 

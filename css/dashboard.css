@@ -24,6 +24,8 @@
 
 .dashboard-logo img {
   height: 40px;
+  width: auto;
+  margin-right: 10px;
 }
 
 .dashboard-logo h1 {
@@ -1708,5 +1710,89 @@
     background-color: #f9f9f9;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
+  }
+}
+
+/* Astronaut image styling for empty states */
+.empty-state-image {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto 20px;
+}
+
+.empty-state-image img {
+  width: 100%;
+  height: auto;
+}
+
+.empty-chat-image {
+  width: 100%;
+  max-width: 150px;
+  margin: 0 auto 20px;
+}
+
+.astronaut-image {
+  width: 100%;
+  height: auto;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Mobile chat view styles */
+.mobile-chat-view .conversations-sidebar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-chat-view .chat-main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-chat-back {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-chat-view .chat-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+
+.mobile-chat-view .chat-header-user {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* Logo styling */
+@media (max-width: 768px) {
+  .dashboard-logo img {
+    height: 32px;
+  }
+
+  .no-conversations-message {
+    padding: 2rem 1rem;
   }
 }
