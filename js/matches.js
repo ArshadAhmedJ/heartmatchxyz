@@ -567,7 +567,7 @@ const matchesModule = (() => {
         </button>
       `
         : `
-        <button class="btn primary-btn like-back-btn" data-user-id="${otherUser.id}">
+        <button class="btn primary-btn like-back-btn" data-user-id="${otherUser.id}" data-name="${displayName}" data-photo="${userPhoto}">
           <i class="fas fa-heart"></i> Like Back
         </button>
       `
@@ -584,8 +584,11 @@ const matchesModule = (() => {
           const userId = e.target.closest(".message-btn").getAttribute("data-user-id")
           openChat(userId)
         } else if (e.target.closest(".like-back-btn")) {
-          const userId = e.target.closest(".like-back-btn").getAttribute("data-user-id")
-          likeBack(userId)
+          const likeBtn = e.target.closest(".like-back-btn")
+          const userId = likeBtn.getAttribute("data-user-id")
+          const userName = likeBtn.getAttribute("data-name")
+          const userPhoto = likeBtn.getAttribute("data-photo")
+          likeBack(userId, userName, userPhoto)
         } else if (e.target.closest(".view-profile-btn")) {
           const userId = e.target.closest(".view-profile-btn").getAttribute("data-user-id")
           viewProfile(userId)
@@ -602,7 +605,7 @@ const matchesModule = (() => {
   }
 
   // Like back a user
-  const likeBack = async (userId) => {
+  const likeBack = async (userId, userName, userPhoto) => {
     console.log("Liking back user:", userId)
 
     try {
@@ -611,6 +614,18 @@ const matchesModule = (() => {
         console.error("No user logged in")
         return
       }
+
+      // Get current user's profile for the match popup
+      const currentUserDoc = await db.collection("users").doc(user.uid).get()
+      if (!currentUserDoc.exists) {
+        console.error("Current user profile not found")
+        return
+      }
+      const currentUserData = currentUserDoc.data()
+      const currentUserPhoto =
+        currentUserData.photos && currentUserData.photos.length > 0
+          ? currentUserData.photos[0]
+          : "images/default-avatar.png"
 
       // Create like document
       await db.collection("likes").add({
@@ -640,11 +655,6 @@ const matchesModule = (() => {
           { merge: true },
         )
 
-      // Show success notification
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("It's a match! You can now message each other.", "success")
-      }
-
       // Update the like card to show it's now a match
       const likeCard = document.querySelector(`.like-card[data-user-id="${userId}"]`)
       if (likeCard) {
@@ -672,16 +682,131 @@ const matchesModule = (() => {
           matchIndicator.innerHTML = '<i class="fas fa-check-circle"></i>'
           photoDiv.appendChild(matchIndicator)
         }
+
+        // Add match animation to the card
+        const matchAnimation = document.createElement("div")
+        matchAnimation.className = "match-animation-overlay"
+        matchAnimation.innerHTML = `
+          <div class="match-animation-content">
+            <i class="fas fa-heart match-heart-icon"></i>
+            <span>It's a Match!</span>
+          </div>
+        `
+        likeCard.appendChild(matchAnimation)
+
+        // Remove the animation after it plays
+        setTimeout(() => {
+          matchAnimation.remove()
+        }, 2000)
       }
 
-      // Reload likes and matches
-      loadLikes()
+      // Show match popup
+      showMatchPopup(currentUserData.displayName || "You", userName, currentUserPhoto, userPhoto)
+
+      // Create confetti effect
+      createConfetti()
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("It's a match! You can now message each other.", "success")
+      }
+
+      // Reload matches
       loadMatches()
     } catch (error) {
       console.error("Error liking back user:", error)
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error liking back user. Please try again.", "error")
       }
+    }
+  }
+
+  // Show match popup
+  const showMatchPopup = (currentUserName, otherUserName, currentUserPhoto, otherUserPhoto) => {
+    // Create match popup
+    const matchPopup = document.createElement("div")
+    matchPopup.className = "match-popup"
+    matchPopup.innerHTML = `
+      <div class="match-popup-content">
+        <div class="match-header">
+          <h2>It's a Match!</h2>
+          <p>You and ${otherUserName} have liked each other</p>
+        </div>
+        <div class="match-images">
+          <div class="match-image" style="background-image: url('${currentUserPhoto}')"></div>
+          <div class="match-heart">
+            <i class="fas fa-heart"></i>
+          </div>
+          <div class="match-image" style="background-image: url('${otherUserPhoto}')"></div>
+        </div>
+        <div class="match-actions">
+          <button class="btn primary-btn send-message-btn" data-user-id="${otherUserPhoto}">
+            <i class="fas fa-comment"></i> Send a Message
+          </button>
+          <button class="btn secondary-btn keep-swiping-btn">
+            <i class="fas fa-sync"></i> Keep Browsing
+          </button>
+        </div>
+      </div>
+    `
+
+    // Add event listeners
+    const sendMessageBtn = matchPopup.querySelector(".send-message-btn")
+    const keepSwipingBtn = matchPopup.querySelector(".keep-swiping-btn")
+
+    if (sendMessageBtn) {
+      sendMessageBtn.addEventListener("click", () => {
+        const userId = sendMessageBtn.getAttribute("data-user-id")
+        closeMatchPopup(matchPopup)
+        openChat(userId)
+      })
+    }
+
+    if (keepSwipingBtn) {
+      keepSwipingBtn.addEventListener("click", () => {
+        closeMatchPopup(matchPopup)
+      })
+    }
+
+    // Add popup to the DOM
+    document.body.appendChild(matchPopup)
+
+    // Close popup when clicking outside
+    matchPopup.addEventListener("click", (e) => {
+      if (e.target === matchPopup) {
+        closeMatchPopup(matchPopup)
+      }
+    })
+  }
+
+  // Close match popup
+  const closeMatchPopup = (popup) => {
+    popup.classList.add("fade-out")
+    setTimeout(() => {
+      popup.remove()
+    }, 300)
+  }
+
+  // Create confetti effect
+  const createConfetti = () => {
+    const colors = ["#ff6b6b", "#4caf50", "#2196f3", "#ff9800", "#e91e63"]
+    const confettiCount = 100
+
+    for (let i = 0; i < confettiCount; i++) {
+      const confetti = document.createElement("div")
+      confetti.className = "confetti"
+      confetti.style.left = Math.random() * 100 + "vw"
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]
+      confetti.style.width = Math.random() * 10 + 5 + "px"
+      confetti.style.height = Math.random() * 10 + 5 + "px"
+      confetti.style.opacity = Math.random() + 0.5
+      confetti.style.animationDuration = Math.random() * 3 + 2 + "s"
+      document.body.appendChild(confetti)
+
+      // Remove confetti after animation
+      setTimeout(() => {
+        confetti.remove()
+      }, 5000)
     }
   }
 
