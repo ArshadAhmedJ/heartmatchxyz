@@ -107,3 +107,37 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(240, 101, 149, 0.5);
 }
+
+/* Empty state styling */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+}
+
+.empty-state-image {
+  max-width: 200px;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.empty-state p {
+  margin-bottom: 0.5rem;
+  color: #666;
+  max-width: 300px;
+}
+
+.empty-state button {
+  margin-top: 1.5rem;
+}

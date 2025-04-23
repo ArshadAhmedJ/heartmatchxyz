@@ -14,6 +14,9 @@ const discoverModule = (() => {
   let currentIndex = 0
   let isLoading = false
 
+  // Excluded user IDs
+  const EXCLUDED_USER_IDS = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
+
   // Initialize discover module
   const init = () => {
     console.log("Initializing discover module")
@@ -437,6 +440,7 @@ const discoverModule = (() => {
       }
 
       const userData = userDoc.data()
+      const userGender = userData.gender || "unknown"
 
       // Get user's likes and dislikes to filter them out
       const likesSnapshot = await db.collection("likes").where("userId", "==", user.uid).get()
@@ -446,14 +450,14 @@ const discoverModule = (() => {
       const dislikedUserIds = dislikesSnapshot.docs.map((doc) => doc.data().dislikedUserId)
 
       // Combine filtered IDs
-      const filteredIds = [...likedUserIds, ...dislikedUserIds, user.uid]
+      const filteredIds = [...likedUserIds, ...dislikedUserIds, user.uid, ...EXCLUDED_USER_IDS]
 
       // Get all users - we'll filter client-side to avoid complex queries that might be rejected by security rules
       const snapshot = await db.collection("users").get()
 
       if (snapshot.empty) {
         console.log("No profiles found")
-        showEmptyState("No profiles found. Try again later!")
+        showEmptyState("No profiles found. Try again later!", userGender)
         isLoading = false
         return
       }
@@ -483,7 +487,9 @@ const discoverModule = (() => {
       console.log(`Loaded ${profiles.length} profiles`)
 
       if (profiles.length === 0) {
-        showEmptyState("No more profiles to show. Try again later!")
+        // Get the gender the user is interested in
+        const interestedIn = userData.preferences?.interestedIn || "all"
+        showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
         isLoading = false
         return
       }
@@ -628,19 +634,45 @@ const discoverModule = (() => {
   }
 
   // Show empty state when no profiles are available
-  const showEmptyState = (message) => {
-    console.log("Showing empty state:", message)
+  const showEmptyState = (message, userGender = "unknown", interestedIn = "all") => {
+    console.log("Showing empty state:", message, "User gender:", userGender, "Interested in:", interestedIn)
 
     if (!cardContainer) {
       console.error("Card container not found")
       return
     }
 
-    cardContainer.innerHTML = `
-      <div class="empty-state">
-        <img src="images/no-profiles.svg" alt="No profiles" />
+    let emptyStateContent = ""
+
+    // Customize empty state based on user gender and who they're interested in
+    if (userGender === "male" && (interestedIn === "female" || interestedIn === "all")) {
+      // Male user looking for females
+      emptyStateContent = `
+        <img src="images/astronaut.png" alt="Lonely astronaut" class="empty-state-image" />
+        <h3>Houston, we have a problem!</h3>
+        <p>Looks like you've explored all available profiles in your area.</p>
+        <p>Even in the vastness of space, finding the right match takes time.</p>
+      `
+    } else if (userGender === "female" && (interestedIn === "male" || interestedIn === "all")) {
+      // Female user looking for males
+      emptyStateContent = `
+        <img src="images/no-profiles.svg" alt="No profiles" class="empty-state-image" />
+        <h3>No matches at the moment</h3>
+        <p>You've seen all available profiles for now.</p>
+        <p>Fun fact: Our developers are also single! Maybe we should add them to the app? 😉</p>
+      `
+    } else {
+      // Default empty state for other combinations
+      emptyStateContent = `
+        <img src="images/no-profiles.svg" alt="No profiles" class="empty-state-image" />
         <h3>No profiles available</h3>
         <p>${message}</p>
+      `
+    }
+
+    cardContainer.innerHTML = `
+      <div class="empty-state">
+        ${emptyStateContent}
         <button id="refresh-profiles-btn" class="btn primary-btn">
           <i class="fas fa-sync-alt"></i> Try Again
         </button>
@@ -846,7 +878,29 @@ const discoverModule = (() => {
 
     if (currentIndex >= profiles.length) {
       console.log("No more profiles to show")
-      showEmptyState("No more profiles to show. Try again later!")
+      // Get current user to determine gender for empty state
+      const user = auth.currentUser
+      if (user) {
+        db.collection("users")
+          .doc(user.uid)
+          .get()
+          .then((doc) => {
+            if (doc.exists) {
+              const userData = doc.data()
+              const userGender = userData.gender || "unknown"
+              const interestedIn = userData.preferences?.interestedIn || "all"
+              showEmptyState("No more profiles to show. Try again later!", userGender, interestedIn)
+            } else {
+              showEmptyState("No more profiles to show. Try again later!")
+            }
+          })
+          .catch((error) => {
+            console.error("Error getting user data:", error)
+            showEmptyState("No more profiles to show. Try again later!")
+          })
+      } else {
+        showEmptyState("No more profiles to show. Try again later!")
+      }
       return
     }
 
