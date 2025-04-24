@@ -140,7 +140,7 @@ window.onboardingModule = (() => {
       if (input) {
         input.addEventListener("change", (e) => {
           if (e.target.files && e.target.files[0]) {
-            const index = Number.parseInt(e.target.getAttribute("data-index"))
+            const index = Number.parseInt(e.target.getAttribute("data-index"), 10)
             handlePhotoUpload(e, index)
           }
         })
@@ -151,11 +151,24 @@ window.onboardingModule = (() => {
     updatePhotoBoxes()
   }
 
+  // Add global event delegation for remove buttons
+  document.addEventListener("click", (e) => {
+    // Check if the clicked element is a remove photo button or its child
+    const removeBtn = e.target.closest(".remove-photo-btn")
+    if (removeBtn) {
+      e.stopPropagation() // Prevent triggering the parent click
+      const index = Number.parseInt(removeBtn.getAttribute("data-index"), 10)
+      console.log("Remove button clicked for index:", index)
+      removePhoto(index)
+    }
+  })
+
   // Update photo boxes with existing photos
   const updatePhotoBoxes = () => {
     if (!photoPreviewContainer) return
 
     const boxes = photoPreviewContainer.querySelectorAll(".photo-upload-box")
+    console.log("Updating photo boxes. Current photos:", userData.photos)
 
     // Update each box based on available photos
     boxes.forEach((box, index) => {
@@ -163,29 +176,19 @@ window.onboardingModule = (() => {
         // Show the image
         box.innerHTML = `
           <div class="photo-preview-item" style="background-image: url('${userData.photos[index]}')">
-            <button class="remove-photo-btn" data-index="${index}" aria-label="Remove photo">
+            <button type="button" class="remove-photo-btn" data-index="${index}" aria-label="Remove photo">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <input type="file" class="photo-upload-input" accept="image/*" data-index="${index}">
         `
 
-        // Add remove event
-        const removeBtn = box.querySelector(".remove-photo-btn")
-        if (removeBtn) {
-          removeBtn.addEventListener("click", (e) => {
-            e.stopPropagation() // Prevent triggering the parent click
-            const index = Number.parseInt(e.currentTarget.getAttribute("data-index"))
-            removePhoto(index)
-          })
-        }
-
         // Re-add change event
         const input = box.querySelector(".photo-upload-input")
         if (input) {
           input.addEventListener("change", (e) => {
             if (e.target.files && e.target.files[0]) {
-              const index = Number.parseInt(e.target.getAttribute("data-index"))
+              const index = Number.parseInt(e.target.getAttribute("data-index"), 10)
               handlePhotoUpload(e, index)
             }
           })
@@ -205,7 +208,7 @@ window.onboardingModule = (() => {
         if (input) {
           input.addEventListener("change", (e) => {
             if (e.target.files && e.target.files[0]) {
-              const index = Number.parseInt(e.target.getAttribute("data-index"))
+              const index = Number.parseInt(e.target.getAttribute("data-index"), 10)
               handlePhotoUpload(e, index)
             }
           })
@@ -616,19 +619,34 @@ window.onboardingModule = (() => {
   const removePhoto = (index) => {
     console.log("Removing photo at index:", index)
 
-    // Remove from userData
-    if (index < userData.photos.length) {
-      userData.photos[index] = null
-
-      // Clean up the array (remove trailing nulls)
-      while (userData.photos.length > 0 && userData.photos[userData.photos.length - 1] === null) {
-        userData.photos.pop()
+    try {
+      // Make sure index is valid
+      if (isNaN(index)) {
+        console.error("Invalid index for photo removal:", index)
+        return
       }
 
-      // Update the UI
-      updatePhotoBoxes()
+      // Remove from userData
+      if (index < userData.photos.length) {
+        console.log("Before removal, photos array:", [...userData.photos])
+        userData.photos[index] = null
 
-      console.log("Photo removed successfully.")
+        // Clean up the array (remove trailing nulls)
+        while (userData.photos.length > 0 && userData.photos[userData.photos.length - 1] === null) {
+          userData.photos.pop()
+        }
+
+        console.log("After removal, photos array:", [...userData.photos])
+
+        // Update the UI
+        updatePhotoBoxes()
+
+        console.log("Photo removed successfully.")
+      } else {
+        console.error("Index out of bounds for photo removal:", index)
+      }
+    } catch (error) {
+      console.error("Error removing photo:", error)
     }
   }
 
