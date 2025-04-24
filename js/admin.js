@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Admin Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -1085,6 +1086,28 @@ const adminModule = (() => {
         window.location.href = "dashboard.html"
       })
     }
+
+    // Match search
+    const matchSearchBtn = document.getElementById("match-search-btn")
+    if (matchSearchBtn) {
+      matchSearchBtn.addEventListener("click", searchMatches)
+    }
+
+    // Match search input (enter key)
+    const matchSearch = document.getElementById("match-search")
+    if (matchSearch) {
+      matchSearch.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          searchMatches()
+        }
+      })
+    }
+
+    // Refresh matches
+    const refreshMatches = document.getElementById("refresh-matches")
+    if (refreshMatches) {
+      refreshMatches.addEventListener("click", loadMatches)
+    }
   }
 
   // Show section
@@ -1123,6 +1146,9 @@ const adminModule = (() => {
         break
       case "users":
         loadUsers()
+        break
+      case "matches":
+        loadMatches()
         break
       case "analytics":
         loadAnalyticsData("day")
@@ -2156,6 +2182,268 @@ const adminModule = (() => {
     }
   }
 
+  // Add this function after the loadUsers function
+
+  // Load matches
+  const loadMatches = async () => {
+    try {
+      showLoadingOverlay()
+
+      // Show loading state
+      document.getElementById("matches-loading").style.display = "flex"
+      document.getElementById("matches-grid").style.display = "none"
+      document.getElementById("matches-empty").style.display = "none"
+
+      // Get matches from Firestore
+      const matchesSnapshot = await db.collection("matches").orderBy("createdAt", "desc").get()
+
+      // Check if there are any matches
+      if (matchesSnapshot.empty) {
+        document.getElementById("matches-loading").style.display = "none"
+        document.getElementById("matches-empty").style.display = "flex"
+        hideLoadingOverlay()
+        return
+      }
+
+      // Process matches
+      const matchesData = []
+      const matchPromises = []
+
+      matchesSnapshot.forEach((doc) => {
+        const matchData = doc.data()
+
+        // Get user data for both users in the match
+        const user1Promise = db.collection("users").doc(matchData.user1Id).get()
+        const user2Promise = db.collection("users").doc(matchData.user2Id).get()
+
+        // Get message count
+        const messagesPromise = db
+          .collection("messages")
+          .where("matchId", "==", doc.id)
+          .get()
+          .then((snapshot) => snapshot.size)
+          .catch(() => 0)
+
+        // Add all promises to the array
+        matchPromises.push(
+          Promise.all([user1Promise, user2Promise, messagesPromise])
+            .then(([user1Doc, user2Doc, messageCount]) => {
+              const user1Data = user1Doc.exists ? user1Doc.data() : { name: "Unknown User" }
+              const user2Data = user2Doc.exists ? user2Doc.data() : { name: "Unknown User" }
+
+              matchesData.push({
+                id: doc.id,
+                user1: {
+                  id: matchData.user1Id,
+                  name: user1Data.name || "Unknown User",
+                  photoURL: user1Data.photoURL || "",
+                  age: user1Data.age || "",
+                  gender: user1Data.gender || "",
+                },
+                user2: {
+                  id: matchData.user2Id,
+                  name: user2Data.name || "Unknown User",
+                  photoURL: user2Data.photoURL || "",
+                  age: user2Data.age || "",
+                  gender: user2Data.gender || "",
+                },
+                createdAt: matchData.createdAt,
+                messageCount: messageCount,
+              })
+            })
+            .catch((error) => {
+              console.error(`Error processing match ${doc.id}:`, error)
+            }),
+        )
+      })
+
+      // Wait for all promises to resolve
+      await Promise.all(matchPromises)
+
+      // Sort matches by creation date (newest first)
+      matchesData.sort((a, b) => {
+        const aTime = a.createdAt ? a.createdAt.toDate() : new Date(0)
+        const bTime = b.createdAt ? b.createdAt.toDate() : new Date(0)
+        return bTime - aTime
+      })
+
+      // Render matches
+      renderMatches(matchesData)
+
+      // Hide loading overlay
+      hideLoadingOverlay()
+    } catch (error) {
+      console.error("Error loading matches:", error)
+
+      // Show error state
+      document.getElementById("matches-loading").innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
+        <p>Error loading matches: ${error.message}</p>
+      `
+
+      hideLoadingOverlay()
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error loading matches: " + error.message, "error")
+      }
+    }
+  }
+
+  // Render matches
+  const renderMatches = (matchesData) => {
+    const matchesGrid = document.getElementById("matches-grid")
+    if (!matchesGrid) return
+
+    // Clear existing content
+    matchesGrid.innerHTML = ""
+
+    if (matchesData.length === 0) {
+      document.getElementById("matches-loading").style.display = "none"
+      document.getElementById("matches-empty").style.display = "flex"
+      return
+    }
+
+    // Hide loading and empty states
+    document.getElementById("matches-loading").style.display = "none"
+    document.getElementById("matches-empty").style.display = "none"
+
+    // Show matches grid
+    matchesGrid.style.display = "grid"
+
+    // Render each match
+    matchesData.forEach((match) => {
+      const matchCard = document.createElement("div")
+      matchCard.className = "match-card"
+
+      // Format timestamp
+      const timestamp = match.createdAt ? match.createdAt.toDate().toLocaleString() : "Unknown"
+
+      // Create match card HTML
+      matchCard.innerHTML = `
+        <div class="match-header">
+          <div class="match-id">ID: ${match.id}</div>
+          <div class="match-timestamp">${timestamp}</div>
+        </div>
+        <div class="match-users">
+          <div class="match-user">
+            <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+            <div class="match-user-name">${match.user1.name}</div>
+            <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
+          </div>
+          <div class="match-user">
+            <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+            <div class="match-user-name">${match.user2.name}</div>
+            <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
+          </div>
+        </div>
+        <div class="match-messages">
+          <div class="match-messages-header">
+            <div class="match-messages-title">Messages</div>
+            <div class="match-messages-count">${match.messageCount}</div>
+          </div>
+          <div class="match-messages-preview">
+            ${match.messageCount > 0 ? `${match.messageCount} messages exchanged` : "No messages yet"}
+          </div>
+        </div>
+        <div class="match-actions">
+          <button class="match-action-btn view" data-id="${match.id}" data-user1="${match.user1.id}" data-user2="${match.user2.id}">
+            <i class="fas fa-eye"></i> View Details
+          </button>
+          <button class="match-action-btn delete" data-id="${match.id}">
+            <i class="fas fa-trash"></i> Delete Match
+          </button>
+        </div>
+      `
+
+      // Add event listeners to buttons
+      const viewBtn = matchCard.querySelector(".match-action-btn.view")
+      const deleteBtn = matchCard.querySelector(".match-action-btn.delete")
+
+      if (viewBtn) {
+        viewBtn.addEventListener("click", () => {
+          // In a real app, this would open a modal with match details
+          alert(`View match details: ${match.id}\nUsers: ${match.user1.name} and ${match.user2.name}`)
+        })
+      }
+
+      if (deleteBtn) {
+        deleteBtn.addEventListener("click", () => {
+          if (
+            confirm(`Are you sure you want to delete the match between ${match.user1.name} and ${match.user2.name}?`)
+          ) {
+            deleteMatch(match.id)
+          }
+        })
+      }
+
+      matchesGrid.appendChild(matchCard)
+    })
+  }
+
+  // Delete match
+  const deleteMatch = async (matchId) => {
+    try {
+      showLoadingOverlay()
+
+      // Delete match document
+      await db.collection("matches").doc(matchId).delete()
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Match deleted successfully", "success")
+      }
+
+      // Reload matches
+      loadMatches()
+    } catch (error) {
+      console.error("Error deleting match:", error)
+      hideLoadingOverlay()
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error deleting match: " + error.message, "error")
+      }
+    }
+  }
+
+  // Search matches
+  const searchMatches = () => {
+    const searchInput = document.getElementById("match-search")
+    if (!searchInput) return
+
+    const searchTerm = searchInput.value.toLowerCase().trim()
+
+    // Get all match cards
+    const cards = document.querySelectorAll(".match-card")
+
+    let hasVisibleCards = false
+
+    cards.forEach((card) => {
+      const user1Name = card.querySelector(".match-user:nth-child(1) .match-user-name").textContent.toLowerCase()
+      const user2Name = card.querySelector(".match-user:nth-child(2) .match-user-name").textContent.toLowerCase()
+
+      if (user1Name.includes(searchTerm) || user2Name.includes(searchTerm) || searchTerm === "") {
+        card.style.display = "block"
+        hasVisibleCards = true
+      } else {
+        card.style.display = "none"
+      }
+    })
+
+    // Show/hide empty state based on search results
+    const emptyState = document.getElementById("matches-empty")
+    if (emptyState) {
+      if (!hasVisibleCards && searchTerm !== "") {
+        emptyState.style.display = "flex"
+        emptyState.innerHTML = `
+          <i class="fas fa-search"></i>
+          <p>No matches found for "${searchTerm}"</p>
+        `
+      } else {
+        emptyState.style.display = "none"
+      }
+    }
+  }
+
   // Render users list
   const renderUsersList = () => {
     const usersTableBody = document.getElementById("users-table-body")
@@ -2936,6 +3224,7 @@ const adminModule = (() => {
     loadDashboardData,
     loadVerificationRequests,
     loadUsers,
+    loadMatches,
     loadAnalyticsData,
     loadSettings,
   }
@@ -2945,6 +3234,7 @@ const adminModule = (() => {
     loadDashboardData,
     loadVerificationRequests,
     loadUsers,
+    loadMatches,
     loadAnalyticsData,
     loadSettings,
   }

@@ -79,6 +79,10 @@
           <i class="fas fa-users"></i>
           <span>Users</span>
         </div>
+        <div class="nav-item" data-section="matches">
+          <i class="fas fa-heart"></i>
+          <span>Matches</span>
+        </div>
         <div class="nav-item" data-section="analytics">
           <i class="fas fa-chart-line"></i>
           <span>Analytics</span>
@@ -274,6 +278,36 @@
               <button id="next-page" class="pagination-btn" disabled>
                 Next <i class="fas fa-chevron-right"></i>
               </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Matches Section -->
+        <section id="matches-section" class="content-section hidden">
+          <div class="section-header">
+            <h2>User Matches</h2>
+            <div class="search-container">
+              <input type="text" id="match-search" placeholder="Search by name..." class="search-input">
+              <button id="match-search-btn" class="search-btn">
+                <i class="fas fa-search"></i>
+              </button>
+              <button id="refresh-matches" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
+          </div>
+          
+          <div class="matches-container">
+            <div id="matches-loading" class="empty-state">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Loading matches...</p>
+            </div>
+            
+            <div id="matches-grid" class="matches-grid" style="display: none;"></div>
+            
+            <div id="matches-empty" class="empty-state" style="display: none;">
+              <i class="fas fa-heart-broken"></i>
+              <p>No matches found</p>
             </div>
           </div>
         </section>
