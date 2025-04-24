@@ -1,0 +1,23 @@
+/* Verification Badge in Match Cards */
+.match-verified-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: white;
+  color: #2196f3;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.match-info h3 .verification-badge {
+  display: inline-flex;
+  color: #2196f3;
+  margin-left: 5px;
+  font-size: 0.7em;
+}

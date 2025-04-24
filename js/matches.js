@@ -596,6 +596,23 @@ const matchesModule = (() => {
       })
 
       likesList.appendChild(likeCard)
+
+      if (window.verificationModule) {
+        // Check if user is verified and add badge
+        window.verificationModule
+          .isUserVerified(otherUser.id)
+          .then((isVerified) => {
+            if (isVerified) {
+              const nameElement = likeCard.querySelector("h3")
+              if (nameElement) {
+                window.verificationModule.addVerificationBadge(nameElement, true)
+              }
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking verification status:", error)
+          })
+      }
     })
 
     // Show the correct tab content
@@ -943,6 +960,133 @@ const matchesModule = (() => {
         window.profileModule.viewProfile(userId)
       }
     }
+  }
+
+  // Update the renderMatchCard function
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "No timestamp"
+
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) {
+      return `${days} day${days > 1 ? "s" : ""} ago`
+    } else if (hours > 0) {
+      return `${hours} hour${hours > 1 ? "s" : ""} ago`
+    } else if (minutes > 0) {
+      return `${minutes} minute${minutes > 1 ? "s" : ""} ago`
+    } else {
+      return "Just now"
+    }
+  }
+
+  // Update the renderMatchCard function to display verification badge
+  const renderMatchCard = (match, userData, otherUserData) => {
+    // Check if the other user is verified
+    const isVerified = otherUserData.verification && otherUserData.verification.status === "verified"
+    const verificationBadge = isVerified
+      ? `<span class="verification-badge" title="Verified Profile"><i class="fas fa-check-circle"></i></span>`
+      : ""
+
+    // Create match card with verification badge
+    const card = document.createElement("div")
+    card.className = "match-card"
+    card.setAttribute("data-match-id", match.id)
+    card.setAttribute("data-user-id", otherUserData.id)
+
+    // Get user photo
+    const userPhoto =
+      otherUserData.photos && otherUserData.photos.length > 0 ? otherUserData.photos[0] : "images/default-avatar.png"
+
+    card.innerHTML = `
+    <div class="match-photo" style="background-image: url('${userPhoto}')">
+      ${isVerified ? `<div class="match-verified-badge"><i class="fas fa-check-circle"></i></div>` : ""}
+    </div>
+    <div class="match-info">
+      <h3>${otherUserData.displayName || "Anonymous"} ${verificationBadge}</h3>
+      <p class="match-last-message">${match.lastMessage || "Say hello!"}</p>
+    </div>
+    <div class="match-time">
+      ${match.lastMessageTimestamp ? formatTimestamp(match.lastMessageTimestamp) : "New match"}
+    </div>
+  `
+
+    // Inside the createMatchCard function, before returning the card element
+    if (window.verificationModule) {
+      // Check if user is verified and add badge
+      window.verificationModule
+        .isUserVerified(otherUserData.id)
+        .then((isVerified) => {
+          if (isVerified) {
+            const nameElement = card.querySelector("h3")
+            if (nameElement) {
+              window.verificationModule.addVerificationBadge(nameElement, true)
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Error checking verification status:", error)
+        })
+    }
+
+    return card
+  }
+
+  // Update the renderLikeCard function to display verification badge
+  const renderLikeCard = (like, userData, otherUserData) => {
+    // Check if the other user is verified
+    const isVerified = otherUserData.verification && otherUserData.verification.status === "verified"
+    const verificationBadge = isVerified
+      ? `<span class="verification-badge" title="Verified Profile"><i class="fas fa-check-circle"></i></span>`
+      : ""
+
+    // Create like card with verification badge
+    const card = document.createElement("div")
+    card.className = "like-card"
+    card.setAttribute("data-like-id", like.id)
+    card.setAttribute("data-user-id", otherUserData.id)
+
+    // Get user photo
+    const userPhoto =
+      otherUserData.photos && otherUserData.photos.length > 0 ? otherUserData.photos[0] : "images/default-avatar.png"
+
+    card.innerHTML = `
+    <div class="like-photo" style="background-image: url('${userPhoto}')">
+      ${isVerified ? `<div class="like-verified-badge"><i class="fas fa-check-circle"></i></div>` : ""}
+    </div>
+    <div class="like-info">
+      <h3>${otherUserData.displayName || "Anonymous"} ${verificationBadge}</h3>
+      <p class="like-last-message">${like.lastMessage || "Say hello!"}</p>
+    </div>
+    <div class="like-time">
+      ${like.lastMessageTimestamp ? formatTimestamp(like.lastMessageTimestamp) : "New like"}
+    </div>
+  `
+
+    // Inside the createLikeCard function, before returning the card element
+    if (window.verificationModule) {
+      // Check if user is verified and add badge
+      window.verificationModule
+        .isUserVerified(otherUserData.id)
+        .then((isVerified) => {
+          if (isVerified) {
+            const nameElement = card.querySelector("h3")
+            if (nameElement) {
+              window.verificationModule.addVerificationBadge(nameElement, true)
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Error checking verification status:", error)
+        })
+    }
+
+    return card
   }
 
   // Public methods

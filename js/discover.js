@@ -562,7 +562,7 @@ const discoverModule = (() => {
     // We're not using viewProfileBtn anymore
   }
 
-  // Show a profile in the card
+  // Update the showProfile function to display verification badge
   const showProfile = (profile) => {
     console.log("Showing profile:", profile.id)
 
@@ -594,28 +594,34 @@ const discoverModule = (() => {
     // Get main photo or use placeholder
     const mainPhoto = profile.photos && profile.photos.length > 0 ? profile.photos[0] : "images/default-avatar.png"
 
+    // Check if profile is verified
+    const isVerified = profile.verification && profile.verification.status === "verified"
+    const verificationBadge = isVerified
+      ? `<span class="verification-badge" title="Verified Profile"><i class="fas fa-check-circle"></i></span>`
+      : ""
+
     // Create card content
     card.innerHTML = `
       <div class="profile-images">
         <div class="profile-image-main" style="background-image: url('${mainPhoto}')">
           <div class="profile-info transparent-bg">
-            <h2>${profile.displayName || profile.name || "Anonymous"}, ${age}</h2>
+            <h2>${profile.displayName || profile.name || "Anonymous"}, ${age} ${verificationBadge}</h2>
             <p>${profile.location || "Nearby"}</p>
           </div>
           ${
             profile.photos && profile.photos.length > 1
               ? `
-            <div class="profile-image-thumbnails">
-              ${profile.photos
-                .slice(1, 4)
-                .map(
-                  (photo, index) => `
-                <div class="profile-image-thumb" style="background-image: url('${photo}')" data-index="${index + 1}"></div>
-              `,
-                )
-                .join("")}
-            </div>
-          `
+              <div class="profile-image-thumbnails">
+                ${profile.photos
+                  .slice(1, 4)
+                  .map(
+                    (photo, index) => `
+                  <div class="profile-image-thumb" style="background-image: url('${photo}')" data-index="${index + 1}"></div>
+                `,
+                  )
+                  .join("")}
+              </div>
+            `
               : ""
           }
         </div>
@@ -625,16 +631,16 @@ const discoverModule = (() => {
         ${
           profile.interests && profile.interests.length > 0
             ? `
-          <div class="profile-interests">
-            ${profile.interests
-              .map(
-                (interest) => `
-              <span class="interest-tag">${interest}</span>
-            `,
-              )
-              .join("")}
-          </div>
-        `
+            <div class="profile-interests">
+              ${profile.interests
+                .map(
+                  (interest) => `
+                <span class="interest-tag">${interest}</span>
+              `,
+                )
+                .join("")}
+            </div>
+          `
             : ""
         }
       </div>
@@ -676,6 +682,28 @@ const discoverModule = (() => {
 
     // Check if user has roses and enable/disable rose button
     checkDailyRose()
+
+    // Add this to the createProfileCard function in discover.js
+    // Inside the createProfileCard function, before returning the card element
+    if (window.verificationModule) {
+      // Check if user is verified and add badge
+      window.verificationModule
+        .isUserVerified(profile.id)
+        .then((isVerified) => {
+          if (isVerified) {
+            const nameElement = card.querySelector(".profile-info h2")
+            if (nameElement) {
+              window.verificationModule.addVerificationBadge(nameElement, true)
+            }
+
+            // Also add badge to card
+            window.verificationModule.addVerificationBadge(card, true)
+          }
+        })
+        .catch((error) => {
+          console.error("Error checking verification status:", error)
+        })
+    }
   }
 
   // Show empty state with developer profiles for female users

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HeartMatch - Admin Dashboard</title>
+  <meta name="description" content="HeartMatch admin dashboard" />
+  
+  <!-- Favicon -->
+  <link rel="icon" href="images/BLK7-logo.png" type="image/png" />
+  <link rel="shortcut icon" href="images/BLK7-logo.png" type="image/png" />
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+  <div id="admin-page" class="admin-container">
+    <!-- Admin Header -->
+    <header class="admin-header">
+      <div class="admin-logo">
+        <img src="images/BLK7-logo.png" alt="HeartMatch Logo" />
+        <h1>HeartMatch Admin</h1>
+      </div>
+      <div class="admin-user">
+        <div class="admin-user-photo" id="admin-photo"></div>
+        <span class="admin-user-name" id="admin-name">Admin</span>
+        <button id="admin-logout-btn" class="btn secondary-btn">Logout</button>
+      </div>
+    </header>
+
+    <div class="admin-content">
+      <!-- Admin Sidebar -->
+      <nav class="admin-sidebar">
+        <div class="nav-item active" data-section="dashboard">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-section="verification">
+          <i class="fas fa-user-check"></i>
+          <span>Verification</span>
+          <span class="badge" id="verification-badge">0</span>
+        </div>
+        <div class="nav-item" data-section="users">
+          <i class="fas fa-users"></i>
+          <span>Users</span>
+        </div>
+        <div class="nav-item" data-section="analytics">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics</span>
+        </div>
+        <div class="nav-item" data-section="settings">
+          <i class="fas fa-cog"></i>
+          <span>Settings</span>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="admin-main">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="content-section">
+          <div class="section-header">
+            <h2>Dashboard</h2>
+            <div class="refresh-container">
+              <button id="refresh-dashboard" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+              <span id="last-updated">Last updated: Never</span>
+            </div>
+          </div>
+          
+          <!-- Stats Cards -->
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-icon users">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-content">
+                <h3>Total Users</h3>
+                <p id="total-users">0</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon active">
+                <i class="fas fa-user-clock"></i>
+              </div>
+              <div class="stat-content">
+                <h3>Active Users</h3>
+                <p id="active-users">0</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon matches">
+                <i class="fas fa-heart"></i>
+              </div>
+              <div class="stat-content">
+                <h3>Total Matches</h3>
+                <p id="total-matches">0</p>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon verification">
+                <i class="fas fa-user-check"></i>
+              </div>
+              <div class="stat-content">
+                <h3>Pending Verification</h3>
+                <p id="pending-verification">0</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Charts -->
+          <div class="charts-container">
+            <div class="chart-card">
+              <h3>User Growth</h3>
+              <div class="chart-container">
+                <canvas id="user-growth-chart"></canvas>
+              </div>
+            </div>
+            
+            <div class="chart-card">
+              <h3>Server Response Time (ms)</h3>
+              <div class="chart-container">
+                <canvas id="response-time-chart"></canvas>
+              </div>
+            </div>
+          </div>
+          
+          <!-- System Health -->
+          <div class="system-health">
+            <h3>System Health</h3>
+            <div class="health-metrics">
+              <div class="metric">
+                <div class="metric-label">API Response Time</div>
+                <div class="metric-value" id="api-response-time">0 ms</div>
+                <div class="metric-status" id="api-status">
+                  <span class="status-indicator good"></span> Good
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Database Latency</div>
+                <div class="metric-value" id="db-latency">0 ms</div>
+                <div class="metric-status" id="db-status">
+                  <span class="status-indicator good"></span> Good
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Storage Performance</div>
+                <div class="metric-value" id="storage-performance">0 ms</div>
+                <div class="metric-status" id="storage-status">
+                  <span class="status-indicator good"></span> Good
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Authentication Delay</div>
+                <div class="metric-value" id="auth-delay">0 ms</div>
+                <div class="metric-status" id="auth-status">
+                  <span class="status-indicator good"></span> Good
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Verification Section -->
+        <section id="verification-section" class="content-section hidden">
+          <div class="section-header">
+            <h2>Verification Requests</h2>
+            <div class="filter-container">
+              <select id="verification-filter" class="filter-select">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="all">All</option>
+              </select>
+              <button id="refresh-verification" class="refresh-btn">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+            </div>
+          </div>
+          
+          <div class="verification-list-container">
+            <div class="verification-list" id="verification-list">
+              <!-- Verification requests will be loaded here -->
+              <div class="empty-state">
+                <i class="fas fa-user-check"></i>
+                <p>No verification requests found</p>
+              </div>
+            </div>
+            
+            <div class="verification-detail" id="verification-detail">
+              <div class="empty-state">
+                <i class="fas fa-user-check"></i>
+                <p>Select a verification request to view details</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="users-section" class="content-section hidden">
+          <div class="section-header">
+            <h2>User Management</h2>
+            <div class="search-container">
+              <input type="text" id="user-search" placeholder="Search users..." class="search-input">
+              <button id="search-btn" class="search-btn">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="users-table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Joined</th>
+                  <th>Status</th>
+                  <th>Verified</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <!-- User rows will be loaded here -->
+              </tbody>
+            </table>
+            <div class="pagination">
+              <button id="prev-page" class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+              </button>
+              <span id="page-info">Page 1 of 1</span>
+              <button id="next-page" class="pagination-btn" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics-section" class="content-section hidden">
+          <div class="section-header">
+            <h2>Performance Analytics</h2>
+            <div class="time-range-container">
+              <select id="time-range" class="time-range-select">
+                <option value="day">Last 24 Hours</option>
+                <option value="week">Last Week</option>
+                <option value="month">Last Month</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="analytics-container">
+            <!-- Performance Metrics -->
+            <div class="performance-metrics">
+              <h3>Server Performance</h3>
+              <div class="metrics-grid">
+                <div class="metric-card">
+                  <h4>Average Response Time</h4>
+                  <p id="avg-response-time" class="metric-value">0 ms</p>
+                  <div class="trend up">
+                    <i class="fas fa-arrow-up"></i> 5%
+                  </div>
+                </div>
+                
+                <div class="metric-card">
+                  <h4>Peak Response Time</h4>
+                  <p id="peak-response-time" class="metric-value">0 ms</p>
+                  <div class="trend down">
+                    <i class="fas fa-arrow-down"></i> 2%
+                  </div>
+                </div>
+                
+                <div class="metric-card">
+                  <h4>API Calls / Minute</h4>
+                  <p id="api-calls" class="metric-value">0</p>
+                  <div class="trend up">
+                    <i class="fas fa-arrow-up"></i> 12%
+                  </div>
+                </div>
+                
+                <div class="metric-card">
+                  <h4>Error Rate</h4>
+                  <p id="error-rate" class="metric-value">0%</p>
+                  <div class="trend down">
+                    <i class="fas fa-arrow-down"></i> 3%
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Performance Charts -->
+            <div class="performance-charts">
+              <div class="chart-card full-width">
+                <h3>Response Time Trends</h3>
+                <div class="chart-container">
+                  <canvas id="response-trend-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="chart-card">
+                <h3>API Endpoint Performance</h3>
+                <div class="chart-container">
+                  <canvas id="endpoint-performance-chart"></canvas>
+                </div>
+              </div>
+              
+              <div class="chart-card">
+                <h3>Error Distribution</h3>
+                <div class="chart-container">
+                  <canvas id="error-distribution-chart"></canvas>
+                </div>
+              </div>
+            </div>
+            
+            <!-- User Activity -->
+            <div class="user-activity">
+              <h3>User Activity</h3>
+              <div class="chart-container">
+                <canvas id="user-activity-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings-section" class="content-section hidden">
+          <div class="section-header">
+            <h2>Admin Settings</h2>
+          </div>
+          
+          <div class="settings-container">
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>Verification Settings</h3>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label for="auto-approve">Auto-approve Verifications</label>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="auto-approve" class="toggle-input" />
+                    <label for="auto-approve" class="toggle-slider"></label>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="verification-expiry">Verification Expiry (days)</label>
+                  <input type="number" id="verification-expiry" class="form-input" min="0" max="365" value="90" />
+                </div>
+                
+                <button id="save-verification-settings" class="btn primary-btn">Save Settings</button>
+              </div>
+            </div>
+            
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>Admin Access</h3>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label for="admin-email">Add Admin User</label>
+                  <div class="input-group">
+                    <input type="email" id="admin-email" class="form-input" placeholder="Email address" />
+                    <button id="add-admin" class="btn secondary-btn">Add</button>
+                  </div>
+                </div>
+                
+                <div class="admin-list">
+                  <h4>Current Admins</h4>
+                  <ul id="admin-list">
+                    <!-- Admin users will be loaded here -->
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h3>System Settings</h3>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-group">
+                  <label for="maintenance-mode">Maintenance Mode</label>
+                  <div class="toggle-switch">
+                    <input type="checkbox" id="maintenance-mode" class="toggle-input" />
+                    <label for="maintenance-mode" class="toggle-slider"></label>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label for="analytics-retention">Analytics Data Retention (days)</label>
+                  <input type="number" id="analytics-retention" class="form-input" min="1" max="365" value="30" />
+                </div>
+                
+                <button id="save-system-settings" class="btn primary-btn">Save Settings</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Notifications Container -->
+  <div id="notifications-container"></div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-functions.js"></script>
+
+  <!-- JavaScript -->
+  <script src="js/utils.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

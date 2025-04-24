@@ -1,16 +1,14 @@
+// Settings Module
 const settingsModule = (() => {
   // Firebase services
-  let firebase, auth, db
+  let firebase, auth, db, storage
 
   // DOM elements
-  const settingsSection = document.getElementById("settings-section")
-  const preferencesForm = document.getElementById("preferences-form")
-  const savePreferencesBtn = document.getElementById("save-preferences-btn")
-  const notificationToggle = document.getElementById("notification-toggle")
-  const deleteAccountBtn = document.getElementById("delete-account-btn")
-
-  // State
-  let currentUser = null
+  let preferencesForm
+  let savePreferencesBtn
+  let notificationToggle
+  let deleteAccountBtn
+  let verificationSection
 
   // Initialize settings module
   const init = () => {
@@ -21,122 +19,392 @@ const settingsModule = (() => {
       firebase = window.firebase
       auth = firebase.auth()
       db = firebase.firestore()
+      storage = firebase.storage ? firebase.storage() : null
     } else {
       console.error("Firebase not initialized in settings module")
       return
     }
 
+    // Get DOM elements
+    preferencesForm = document.getElementById("preferences-form")
+    savePreferencesBtn = document.getElementById("save-preferences-btn")
+    notificationToggle = document.getElementById("notification-toggle")
+    deleteAccountBtn = document.getElementById("delete-account-btn")
+
+    // Create verification section
+    createVerificationSection()
+
+    // Load user preferences
+    loadUserPreferences()
+
+    // Bind events
     bindEvents()
-    loadSettings()
 
     console.log("Settings module initialized")
   }
 
-  // Load user settings
-  const loadSettings = async () => {
-    try {
-      currentUser = auth.currentUser
-      if (!currentUser) return
+  // Create verification section
+  const createVerificationSection = () => {
+    // Find the settings container
+    const settingsContainer = document.querySelector(".settings-container")
+    if (!settingsContainer) return
 
-      // Get user data
-      const userDoc = await db.collection("users").doc(currentUser.uid).get()
+    // Create verification card
+    const verificationCard = document.createElement("div")
+    verificationCard.className = "settings-card"
+    verificationCard.innerHTML = `
+      <div class="settings-card-header">
+        <h3>Profile Verification</h3>
+      </div>
+      <div class="settings-card-body" id="verification-section">
+        <p>Verify your profile to let others know you're a real person. Get a verification badge on your profile!</p>
+        <div class="verification-status">
+          <div id="verification-status-indicator" class="verification-indicator">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <div id="verification-status-text">Checking verification status...</div>
+        </div>
+        <div id="verification-actions" class="verification-actions" style="display: none;">
+          <div id="verification-instructions" class="verification-instructions">
+            <p>Take a selfie in the pose shown below to verify your identity:</p>
+            <div class="verification-pose">
+              <img src="images/verification-pose.png" alt="Verification pose" />
+              <p>Take a photo with your hand raised like this</p>
+            </div>
+          </div>
+          <div class="verification-upload">
+            <input type="file" id="verification-photo" accept="image/*" capture="user" class="verification-input" />
+            <label for="verification-photo" class="btn secondary-btn verification-btn">
+              <i class="fas fa-camera"></i> Take Verification Photo
+            </label>
+          </div>
+          <div id="verification-preview" class="verification-preview" style="display: none;">
+            <img id="verification-image" src="/placeholder.svg" alt="Verification photo preview" />
+            <div class="verification-preview-actions">
+              <button id="submit-verification" class="btn primary-btn">Submit for Verification</button>
+              <button id="retake-verification" class="btn secondary-btn">Retake Photo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+
+    // Insert before the last card (account settings)
+    const lastCard = settingsContainer.querySelector(".settings-card:last-child")
+    settingsContainer.insertBefore(verificationCard, lastCard)
+
+    // Store reference to verification section
+    verificationSection = document.getElementById("verification-section")
+
+    // Add event listeners for verification
+    bindVerificationEvents()
+
+    // Check verification status
+    checkVerificationStatus()
+  }
+
+  // Check verification status
+  const checkVerificationStatus = async () => {
+    try {
+      const user = auth.currentUser
+      if (!user) return
+
+      const statusIndicator = document.getElementById("verification-status-indicator")
+      const statusText = document.getElementById("verification-status-text")
+      const verificationActions = document.getElementById("verification-actions")
+
+      // Get user document
+      const userDoc = await db.collection("users").doc(user.uid).get()
+      if (!userDoc.exists) return
+
       const userData = userDoc.data()
 
-      // Populate form with user preferences
-      populatePreferencesForm(userData.preferences || {})
+      // Update UI based on verification status
+      if (userData.verification) {
+        statusIndicator.innerHTML = '<i class="fas fa-check-circle"></i>'
+        statusIndicator.className = "verification-indicator verified"
 
-      // Set notification toggle
-      if (notificationToggle) {
-        notificationToggle.checked = userData.notificationsEnabled !== false
+        if (userData.verification.status === "verified") {
+          statusText.textContent = "Your profile is verified! ✓"
+          verificationActions.style.display = "none"
+        } else if (userData.verification.status === "pending") {
+          statusText.textContent = "Verification pending review. We'll notify you when it's approved."
+          verificationActions.style.display = "none"
+        } else if (userData.verification.status === "rejected") {
+          statusText.textContent = "Verification rejected. Please try again with a clearer photo."
+          verificationActions.style.display = "block"
+        }
+      } else {
+        statusIndicator.innerHTML = '<i class="fas fa-times-circle"></i>'
+        statusIndicator.className = "verification-indicator unverified"
+        statusText.textContent = "Your profile is not verified"
+        verificationActions.style.display = "block"
       }
     } catch (error) {
-      console.error("Error loading settings:", error)
-      if (window.utils) {
-        window.utils.showNotification("Error loading settings. Please try again.", "error")
-      }
+      console.error("Error checking verification status:", error)
     }
   }
 
-  // Populate preferences form
-  const populatePreferencesForm = (preferences) => {
-    if (!preferencesForm) return
-
-    // Gender preference
-    const genderSelect = preferencesForm.querySelector("#gender-preference")
-    if (genderSelect) {
-      genderSelect.value = preferences.interestedIn || "all"
+  // Bind verification events
+  const bindVerificationEvents = () => {
+    // Photo upload
+    const photoInput = document.getElementById("verification-photo")
+    if (photoInput) {
+      photoInput.addEventListener("change", handleVerificationPhoto)
     }
 
-    // Age range
-    const minAgeInput = preferencesForm.querySelector("#min-age")
-    const maxAgeInput = preferencesForm.querySelector("#max-age")
-
-    if (minAgeInput) {
-      minAgeInput.value = preferences.ageRange?.min || 18
+    // Submit verification
+    const submitBtn = document.getElementById("submit-verification")
+    if (submitBtn) {
+      submitBtn.addEventListener("click", submitVerification)
     }
 
-    if (maxAgeInput) {
-      maxAgeInput.value = preferences.ageRange?.max || 99
-    }
+    // Retake photo
+    const retakeBtn = document.getElementById("retake-verification")
+    if (retakeBtn) {
+      retakeBtn.addEventListener("click", () => {
+        const preview = document.getElementById("verification-preview")
+        const actions = document.getElementById("verification-instructions")
+        const uploadBtn = document.querySelector(".verification-upload")
 
-    // Distance
-    const maxDistanceInput = preferencesForm.querySelector("#max-distance")
-    if (maxDistanceInput) {
-      maxDistanceInput.value = preferences.maxDistance || 50
+        if (preview) preview.style.display = "none"
+        if (actions) actions.style.display = "block"
+        if (uploadBtn) uploadBtn.style.display = "block"
+      })
     }
   }
 
-  // Save preferences
-  const savePreferences = async () => {
+  // Handle verification photo upload
+  const handleVerificationPhoto = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const preview = document.getElementById("verification-preview")
+      const image = document.getElementById("verification-image")
+      const instructions = document.getElementById("verification-instructions")
+      const uploadBtn = document.querySelector(".verification-upload")
+
+      if (image) image.src = event.target.result
+      if (preview) preview.style.display = "block"
+      if (instructions) instructions.style.display = "none"
+      if (uploadBtn) uploadBtn.style.display = "none"
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Submit verification photo
+  const submitVerification = async () => {
     try {
-      if (!preferencesForm) return
+      const user = auth.currentUser
+      if (!user) return
 
-      // Get form values
-      const genderSelect = preferencesForm.querySelector("#gender-preference")
-      const minAgeInput = preferencesForm.querySelector("#min-age")
-      const maxAgeInput = preferencesForm.querySelector("#max-age")
-      const maxDistanceInput = preferencesForm.querySelector("#max-distance")
-
-      const interestedIn = genderSelect ? genderSelect.value : "all"
-      const minAge = minAgeInput ? Number.parseInt(minAgeInput.value) : 18
-      const maxAge = maxAgeInput ? Number.parseInt(maxAgeInput.value) : 99
-      const maxDistance = maxDistanceInput ? Number.parseInt(maxDistanceInput.value) : 50
-
-      // Validate age range
-      if (minAge >= maxAge) {
-        if (window.utils) {
-          window.utils.showNotification("Minimum age must be less than maximum age.", "error")
-        }
+      const photoInput = document.getElementById("verification-photo")
+      if (!photoInput || !photoInput.files || !photoInput.files[0]) {
+        console.error("No verification photo selected")
         return
       }
 
-      // Get notification setting
-      const notificationsEnabled = notificationToggle ? notificationToggle.checked : true
+      // Show loading state
+      const submitBtn = document.getElementById("submit-verification")
+      if (submitBtn) {
+        submitBtn.disabled = true
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...'
+      }
 
-      // Update user preferences in Firestore
+      // Upload photo to storage
+      const file = photoInput.files[0]
+      const storageRef = storage.ref()
+      const fileRef = storageRef.child(`verification/${user.uid}/${Date.now()}_verification.jpg`)
+
+      await fileRef.put(file)
+      const photoURL = await fileRef.getDownloadURL()
+
+      // Update user document with verification request
       await db
         .collection("users")
-        .doc(currentUser.uid)
+        .doc(user.uid)
+        .update({
+          verification: {
+            status: "pending",
+            photoURL: photoURL,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          },
+        })
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Verification photo submitted! We'll review it shortly.", "success")
+      }
+
+      // Update UI
+      checkVerificationStatus()
+    } catch (error) {
+      console.error("Error submitting verification:", error)
+
+      // Show error notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error submitting verification. Please try again.", "error")
+      }
+
+      // Reset button
+      const submitBtn = document.getElementById("submit-verification")
+      if (submitBtn) {
+        submitBtn.disabled = false
+        submitBtn.textContent = "Submit for Verification"
+      }
+    }
+  }
+
+  // Load user preferences
+  const loadUserPreferences = async () => {
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
+      // Get user document
+      const userDoc = await db.collection("users").doc(user.uid).get()
+      if (!userDoc.exists) {
+        console.error("User document not found")
+        return
+      }
+
+      const userData = userDoc.data()
+
+      // Set form values
+      if (userData.preferences) {
+        const genderPreference = document.getElementById("gender-preference")
+        const minAge = document.getElementById("min-age")
+        const maxAge = document.getElementById("max-age")
+        const maxDistance = document.getElementById("max-distance")
+
+        if (genderPreference && userData.preferences.interestedIn) {
+          genderPreference.value = userData.preferences.interestedIn
+        }
+
+        if (minAge && userData.preferences.ageRange && userData.preferences.ageRange.min) {
+          minAge.value = userData.preferences.ageRange.min
+        }
+
+        if (maxAge && userData.preferences.ageRange && userData.preferences.ageRange.max) {
+          maxAge.value = userData.preferences.ageRange.max
+        }
+
+        if (maxDistance && userData.preferences.maxDistance) {
+          maxDistance.value = userData.preferences.maxDistance
+        }
+      }
+
+      // Set notification toggle
+      if (notificationToggle && userData.notifications !== undefined) {
+        notificationToggle.checked = userData.notifications
+      }
+    } catch (error) {
+      console.error("Error loading user preferences:", error)
+    }
+  }
+
+  // Save user preferences
+  const savePreferences = async () => {
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
+      // Get form values
+      const genderPreference = document.getElementById("gender-preference").value
+      const minAge = Number.parseInt(document.getElementById("min-age").value)
+      const maxAge = Number.parseInt(document.getElementById("max-age").value)
+      const maxDistance = Number.parseInt(document.getElementById("max-distance").value)
+
+      // Validate values
+      if (minAge < 18) {
+        console.log("Minimum age must be at least 18")
+        return
+      }
+
+      if (maxAge < minAge) {
+        console.log("Maximum age must be greater than minimum age")
+        return
+      }
+
+      if (maxDistance < 1) {
+        console.log("Maximum distance must be at least 1 km")
+        return
+      }
+
+      // Update user preferences
+      await db
+        .collection("users")
+        .doc(user.uid)
         .update({
           preferences: {
-            interestedIn,
+            interestedIn: genderPreference,
             ageRange: {
               min: minAge,
               max: maxAge,
             },
-            maxDistance,
+            maxDistance: maxDistance,
           },
-          notificationsEnabled,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
         })
 
-      if (window.utils) {
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Preferences saved successfully!", "success")
       }
     } catch (error) {
       console.error("Error saving preferences:", error)
-      if (window.utils) {
+
+      // Show error notification
+      if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error saving preferences. Please try again.", "error")
+      }
+    }
+  }
+
+  // Toggle notifications
+  const toggleNotifications = async () => {
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
+      // Get toggle value
+      const notificationsEnabled = notificationToggle.checked
+
+      // Update user preferences
+      await db.collection("users").doc(user.uid).update({
+        notifications: notificationsEnabled,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification(
+          `Notifications ${notificationsEnabled ? "enabled" : "disabled"} successfully!`,
+          "success",
+        )
+      }
+    } catch (error) {
+      console.error("Error toggling notifications:", error)
+
+      // Show error notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error updating notification settings. Please try again.", "error")
+      }
+
+      // Reset toggle to previous state
+      if (notificationToggle) {
+        notificationToggle.checked = !notificationToggle.checked
       }
     }
   }
@@ -144,47 +412,58 @@ const settingsModule = (() => {
   // Delete account
   const deleteAccount = async () => {
     try {
-      // Show confirmation dialog
-      const confirmed = confirm("Are you sure you want to delete your account? This action cannot be undone.")
-
-      if (!confirmed) return
-
-      // Delete user data from Firestore
-      await db.collection("users").doc(currentUser.uid).delete()
-
-      // Delete user authentication
-      await currentUser.delete()
-
-      // Redirect to landing page
-      window.location.reload()
-    } catch (error) {
-      console.error("Error deleting account:", error)
-      if (window.utils) {
-        window.utils.showNotification("Error deleting account. Please try again.", "error")
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
       }
 
-      // If error is due to recent login requirement
-      if (error.code === "auth/requires-recent-login") {
-        if (window.utils) {
-          window.utils.showNotification("Please log out and log back in to delete your account.", "info")
-        }
-        // authModule is not defined in this scope. Assuming it's a global object.
-        // If authModule is not a global object, you'll need to import or define it here.
-        if (window.authModule && window.authModule.logout) {
-          window.authModule.logout()
-        } else {
-          console.warn("authModule or authModule.logout is not defined. Logout functionality may not work.")
-        }
+      // Show confirmation dialog
+      const confirmed = window.confirm("Are you sure you want to delete your account? This action cannot be undone.")
+
+      if (!confirmed) {
+        return
+      }
+
+      // Delete user document
+      await db.collection("users").doc(user.uid).delete()
+
+      // Delete user authentication
+      await user.delete()
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Account deleted successfully!", "success")
+      }
+
+      // Redirect to landing page
+      window.location.href = "index.html"
+    } catch (error) {
+      console.error("Error deleting account:", error)
+
+      // Show error notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification(
+          "Error deleting account. You may need to re-authenticate. Please try again.",
+          "error",
+        )
       }
     }
   }
 
   // Bind events
   const bindEvents = () => {
+    // Save preferences
     if (savePreferencesBtn) {
       savePreferencesBtn.addEventListener("click", savePreferences)
     }
 
+    // Toggle notifications
+    if (notificationToggle) {
+      notificationToggle.addEventListener("change", toggleNotifications)
+    }
+
+    // Delete account
     if (deleteAccountBtn) {
       deleteAccountBtn.addEventListener("click", deleteAccount)
     }
@@ -193,15 +472,17 @@ const settingsModule = (() => {
   // Expose module
   window.settingsModule = {
     init,
-    loadSettings,
+    loadUserPreferences,
     savePreferences,
+    toggleNotifications,
     deleteAccount,
   }
 
   return {
     init,
-    loadSettings,
+    loadUserPreferences,
     savePreferences,
+    toggleNotifications,
     deleteAccount,
   }
 })()
