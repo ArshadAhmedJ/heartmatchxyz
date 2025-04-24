@@ -224,19 +224,24 @@ const profileModule = (() => {
                     ? Array(Math.max(0, 3 - photos.length))
                         .fill()
                         .map(
-                          () => `
-                      <div class="profile-photo-card">
-                        <div class="profile-photo-item empty">
-                          <div class="photo-upload-overlay">
-                            <label class="photo-upload-label">
-                              <i class="fas fa-plus"></i>
-                              <span>Add Photo</span>
-                              <input type="file" class="photo-upload" accept="image/*">
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    `,
+                          (_, emptyIndex) => `
+      <div class="profile-photo-card">
+        <div class="profile-photo-item empty">
+          <div class="photo-actions">
+            <button class="photo-edit-btn" data-empty-index="${photos.length + emptyIndex}" aria-label="Add photo">
+              <i class="fas fa-edit"></i>
+            </button>
+          </div>
+          <div class="photo-upload-overlay">
+            <label class="photo-upload-label">
+              <i class="fas fa-plus"></i>
+              <span>Add Photo</span>
+              <input type="file" class="photo-upload" accept="image/*">
+            </label>
+          </div>
+        </div>
+      </div>
+    `,
                         )
                         .join("")
                     : ""
@@ -451,6 +456,34 @@ const profileModule = (() => {
             }
           })
         })
+
+        // Photo edit buttons for empty slots
+        const emptyPhotoEditBtns = profileContent.querySelectorAll(".photo-edit-btn[data-empty-index]")
+        emptyPhotoEditBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const emptyIndex = Number.parseInt(btn.getAttribute("data-empty-index"))
+
+            // Create a hidden file input for adding a photo
+            const fileInput = document.createElement("input")
+            fileInput.type = "file"
+            fileInput.accept = "image/*"
+            fileInput.style.display = "none"
+            document.body.appendChild(fileInput)
+
+            // Trigger click on the file input
+            fileInput.click()
+
+            // Handle file selection
+            fileInput.addEventListener("change", (e) => {
+              if (e.target.files && e.target.files[0]) {
+                // Use the existing uploadPhoto function
+                uploadPhoto(e.target.files[0], userData, emptyIndex)
+              }
+              // Remove the temporary input
+              document.body.removeChild(fileInput)
+            })
+          })
+        })
       } else {
         // Edit profile button
         const editProfileBtn = profileContent.querySelector("#edit-profile-btn")
@@ -537,8 +570,8 @@ const profileModule = (() => {
   }
 
   // Upload photo
-  const uploadPhoto = async (file, userData) => {
-    console.log("Uploading photo")
+  const uploadPhoto = async (file, userData, targetIndex = null) => {
+    console.log("Uploading photo", targetIndex !== null ? `at index: ${targetIndex}` : "")
 
     try {
       const user = auth.currentUser
@@ -567,16 +600,36 @@ const profileModule = (() => {
         userData.photos = []
       }
 
-      // Add photo to array (limit to 3 photos)
-      if (userData.photos.length < 3) {
-        userData.photos.push(photoURL)
+      // If a specific index was provided, use it
+      if (targetIndex !== null) {
+        // Ensure the array is long enough
+        while (userData.photos.length <= targetIndex) {
+          userData.photos.push(null)
+        }
+        userData.photos[targetIndex] = photoURL
       } else {
-        // Replace the first null value or add to the end if no nulls
-        const nullIndex = userData.photos.findIndex((photo) => photo === null)
-        if (nullIndex !== -1) {
-          userData.photos[nullIndex] = photoURL
+        // Add photo to array (limit to 3 photos)
+        if (userData.photos.length < 3) {
+          userData.photos.push(photoURL)
         } else {
-          userData.photos[2] = photoURL // Replace the last photo if we already have 3
+          // Replace the first null value or add to the end if no nulls
+          const nullIndex = userData.photos.findIndex((photo) => photo === null)
+          if (nullIndex !== -1) {
+            userData.photos[nullIndex] = photoURL
+          } else {
+            userData.photos[2] = photoURL // Replace the last photo if we already have 3
+          }
+        }
+      }
+
+      // Update user profile photo if it's the first photo
+      if (targetIndex === 0 || (targetIndex === null && userData.photos[0] === photoURL)) {
+        try {
+          await user.updateProfile({
+            photoURL: photoURL,
+          })
+        } catch (profileError) {
+          console.error("Error updating profile photo:", profileError)
         }
       }
 
