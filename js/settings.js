@@ -10,6 +10,11 @@ const settingsModule = (() => {
   let deleteAccountBtn
   let verificationSection
 
+  // Add this helper function at the beginning of the module
+  const elementContainsText = (element, text) => {
+    return element.textContent.includes(text)
+  }
+
   // Initialize settings module
   const init = () => {
     console.log("Initializing settings module")
@@ -31,8 +36,22 @@ const settingsModule = (() => {
     notificationToggle = document.getElementById("notification-toggle")
     deleteAccountBtn = document.getElementById("delete-account-btn")
 
-    // Create verification section
-    createVerificationSection()
+    // Check if verification section already exists
+    const verificationExists = Array.from(document.querySelectorAll(".settings-card .settings-card-header h3")).some(
+      (header) => header.textContent.includes("Profile Verification"),
+    )
+
+    if (!verificationExists) {
+      // Create verification section only if it doesn't exist
+      createVerificationSection()
+    } else {
+      // Just get a reference to the existing section
+      verificationSection = document.getElementById("verification-section")
+      // Rebind events to ensure they work
+      bindVerificationEvents()
+      // Check verification status
+      checkVerificationStatus()
+    }
 
     // Load user preferences
     loadUserPreferences()
@@ -48,6 +67,15 @@ const settingsModule = (() => {
     // Find the settings container
     const settingsContainer = document.querySelector(".settings-container")
     if (!settingsContainer) return
+
+    // Check if verification section already exists
+    const verificationExists = Array.from(document.querySelectorAll(".settings-card .settings-card-header h3")).some(
+      (header) => elementContainsText(header, "Profile Verification"),
+    )
+    if (verificationExists) {
+      console.log("Verification section already exists, skipping creation")
+      return
+    }
 
     // Create verification card
     const verificationCard = document.createElement("div")
@@ -87,7 +115,8 @@ const settingsModule = (() => {
           </div>
         </div>
       </div>
-    `
+    </div>
+  `
 
     // Insert before the last card (account settings)
     const lastCard = settingsContainer.querySelector(".settings-card:last-child")
