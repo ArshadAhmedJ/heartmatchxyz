@@ -120,6 +120,84 @@ const verificationModule = (() => {
     }
   }
 
+  // Upload verification photo
+  const uploadVerificationPhoto = async (file, userId) => {
+    if (!storage) {
+      console.error("Firebase Storage not initialized")
+      throw new Error("Storage not available")
+    }
+
+    if (!file || !userId) {
+      throw new Error("File or user ID missing")
+    }
+
+    try {
+      // Create a storage reference
+      const storageRef = storage.ref()
+      const fileRef = storageRef.child(`verification/${userId}/${Date.now()}_verification.jpg`)
+
+      // Upload the file
+      const uploadTask = fileRef.put(file)
+
+      // Return a promise that resolves with the download URL
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            // Progress function
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            console.log("Upload is " + progress + "% done")
+          },
+          (error) => {
+            // Error function
+            console.error("Upload failed:", error)
+            reject(error)
+          },
+          async () => {
+            // Complete function
+            try {
+              const downloadURL = await uploadTask.snapshot.ref.getDownloadURL()
+              resolve(downloadURL)
+            } catch (error) {
+              console.error("Error getting download URL:", error)
+              reject(error)
+            }
+          },
+        )
+      })
+    } catch (error) {
+      console.error("Error in uploadVerificationPhoto:", error)
+      throw error
+    }
+  }
+
+  // Delete verification photo
+  const deleteVerificationPhoto = async (photoURL) => {
+    if (!storage) {
+      console.error("Firebase Storage not initialized")
+      return
+    }
+
+    if (!photoURL) {
+      console.error("No photo URL provided")
+      return
+    }
+
+    try {
+      // Extract the path from the URL
+      const path = decodeURIComponent(photoURL.split("/o/")[1].split("?")[0])
+      const storageRef = storage.ref()
+      const fileRef = storageRef.child(path)
+
+      // Delete the file
+      await fileRef.delete()
+      console.log("Verification photo deleted successfully")
+    } catch (error) {
+      console.error("Error deleting verification photo:", error)
+      // Don't throw the error, just log it
+    }
+  }
+
   // Expose module
   window.verificationModule = {
     init,
@@ -127,6 +205,8 @@ const verificationModule = (() => {
     addVerificationBadge,
     updateDiscoverCardBadges,
     updateMatchBadges,
+    uploadVerificationPhoto,
+    deleteVerificationPhoto,
   }
 
   return {
@@ -135,6 +215,8 @@ const verificationModule = (() => {
     addVerificationBadge,
     updateDiscoverCardBadges,
     updateMatchBadges,
+    uploadVerificationPhoto,
+    deleteVerificationPhoto,
   }
 })()
 

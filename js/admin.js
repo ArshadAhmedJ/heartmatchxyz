@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Admin Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -16,6 +17,11 @@ const adminModule = (() => {
     apiCalls: [],
     errorRate: [],
   }
+
+  // Real-time listeners
+  let verificationListener = null
+  let usersListener = null
+  let dashboardStatsListener = null
 
   // Initialize admin module
   const init = () => {
@@ -109,6 +115,9 @@ const adminModule = (() => {
   const handleAuthStateChanged = (user) => {
     console.log("Auth state changed:", user ? "User logged in" : "User logged out")
 
+    // Clean up any existing listeners
+    cleanupListeners()
+
     if (user) {
       // User is signed in
       currentUser = user
@@ -117,6 +126,24 @@ const adminModule = (() => {
       // User is signed out
       currentUser = null
       showLoginScreen()
+    }
+  }
+
+  // Clean up listeners
+  const cleanupListeners = () => {
+    if (verificationListener) {
+      verificationListener()
+      verificationListener = null
+    }
+
+    if (usersListener) {
+      usersListener()
+      usersListener = null
+    }
+
+    if (dashboardStatsListener) {
+      dashboardStatsListener()
+      dashboardStatsListener = null
     }
   }
 
@@ -443,6 +470,11 @@ const adminModule = (() => {
       document.getElementById("total-matches").textContent = "Loading..."
       document.getElementById("pending-verification").textContent = "Loading..."
 
+      // Set up real-time listener for dashboard stats
+      if (dashboardStatsListener) {
+        dashboardStatsListener()
+      }
+
       // Get counts from Firestore
       const usersSnapshot = await db.collection("users").get()
       const totalUsers = usersSnapshot.size
@@ -487,6 +519,21 @@ const adminModule = (() => {
       loadUserGrowthChart()
       loadResponseTimeChart()
       loadSystemHealthData()
+
+      // Set up real-time listener for pending verifications
+      dashboardStatsListener = db
+        .collection("users")
+        .where("verification.status", "==", "pending")
+        .onSnapshot(
+          (snapshot) => {
+            const pendingCount = snapshot.size
+            document.getElementById("pending-verification").textContent = pendingCount
+            document.getElementById("verification-badge").textContent = pendingCount
+          },
+          (error) => {
+            console.error("Error in verification listener:", error)
+          },
+        )
     } catch (error) {
       console.error("Error loading dashboard data:", error)
       hideLoadingOverlay()
@@ -736,46 +783,70 @@ const adminModule = (() => {
         `
       }
 
-      // Query Firestore
-      let query = db.collection("users")
-
-      if (status !== "all") {
-        query = query.where("verification.status", "==", status)
+      // Clean up existing listener
+      if (verificationListener) {
+        verificationListener()
+        verificationListener = null
       }
 
-      const snapshot = await query.get()
+      // Set up real-time listener
+      verificationListener = db
+        .collection("users")
+        .where("verification.status", "==", status)
+        .onSnapshot(
+          (snapshot) => {
+            // Process results
+            verificationRequests = []
 
-      // Process results
-      verificationRequests = []
+            snapshot.forEach((doc) => {
+              const userData = doc.data()
 
-      snapshot.forEach((doc) => {
-        const userData = doc.data()
+              if (userData.verification) {
+                verificationRequests.push({
+                  id: doc.id,
+                  name: userData.name || "Unknown User",
+                  email: userData.email || "",
+                  photoURL: userData.photoURL || "",
+                  verification: userData.verification,
+                })
+              }
+            })
 
-        if (userData.verification) {
-          verificationRequests.push({
-            id: doc.id,
-            name: userData.name || "Unknown User",
-            email: userData.email || "",
-            photoURL: userData.photoURL || "",
-            verification: userData.verification,
-          })
-        }
-      })
+            // Sort by timestamp (newest first)
+            verificationRequests.sort((a, b) => {
+              const aTime = a.verification.timestamp ? a.verification.timestamp.toDate() : new Date(0)
+              const bTime = b.verification.timestamp ? b.verification.timestamp.toDate() : new Date(0)
 
-      // Sort by timestamp (newest first)
-      verificationRequests.sort((a, b) => {
-        const aTime = a.verification.timestamp ? a.verification.timestamp.toDate() : new Date(0)
-        const bTime = b.verification.timestamp ? b.verification.timestamp.toDate() : new Date(0)
+              return bTime - aTime
+            })
 
-        return bTime - aTime
-      })
+            hideLoadingOverlay()
 
-      hideLoadingOverlay()
+            // Render list
+            renderVerificationList()
+          },
+          (error) => {
+            console.error("Error in verification listener:", error)
+            hideLoadingOverlay()
 
-      // Render list
-      renderVerificationList()
+            if (window.utils && window.utils.showNotification) {
+              window.utils.showNotification("Error loading verification requests: " + error.message, "error")
+            }
+
+            // Show error state
+            const verificationList = document.getElementById("verification-list")
+            if (verificationList) {
+              verificationList.innerHTML = `
+              <div class="empty-state">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Error loading verification requests. Please try again.</p>
+              </div>
+            `
+            }
+          },
+        )
     } catch (error) {
-      console.error("Error loading verification requests:", error)
+      console.error("Error setting up verification listener:", error)
       hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
@@ -917,12 +988,48 @@ const adminModule = (() => {
     try {
       if (!selectedVerification) return
 
+      // Show loading state
+      const approveBtn = document.getElementById("approve-verification")
+      const rejectBtn = document.getElementById("reject-verification")
+
+      if (approveBtn) approveBtn.disabled = true
+      if (rejectBtn) rejectBtn.disabled = true
+
+      // Get the verification photo URL before updating
+      const photoURL = selectedVerification.verification.photoURL
+
       // Update Firestore
       await db.collection("users").doc(selectedVerification.id).update({
         "verification.status": status,
         "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
         "verification.reviewedBy": currentUser.uid,
+        // Remove the photoURL if approved or rejected
+        "verification.photoURL": firebase.firestore.FieldValue.delete(),
       })
+
+      // Delete the verification photo from storage
+      if (photoURL && window.verificationModule && window.verificationModule.deleteVerificationPhoto) {
+        try {
+          await window.verificationModule.deleteVerificationPhoto(photoURL)
+        } catch (error) {
+          console.error("Error deleting verification photo:", error)
+          // Continue anyway, this is not critical
+        }
+      } else if (photoURL && storage) {
+        try {
+          // Extract the path from the URL
+          const path = decodeURIComponent(photoURL.split("/o/")[1].split("?")[0])
+          const storageRef = storage.ref()
+          const fileRef = storageRef.child(path)
+
+          // Delete the file
+          await fileRef.delete()
+          console.log("Verification photo deleted successfully")
+        } catch (error) {
+          console.error("Error deleting verification photo:", error)
+          // Continue anyway, this is not critical
+        }
+      }
 
       // Show notification
       if (window.utils && window.utils.showNotification) {
@@ -934,6 +1041,7 @@ const adminModule = (() => {
 
       // Update local data
       selectedVerification.verification.status = status
+      selectedVerification.verification.photoURL = null
 
       // Update UI
       const statusElement = document.querySelector(".verification-detail-status")
@@ -952,10 +1060,21 @@ const adminModule = (() => {
         }
       }
 
+      // Re-enable buttons
+      if (approveBtn) approveBtn.disabled = false
+      if (rejectBtn) rejectBtn.disabled = false
+
       // Reload verification count
       loadDashboardData()
     } catch (error) {
       console.error("Error updating verification status:", error)
+
+      // Re-enable buttons
+      const approveBtn = document.getElementById("approve-verification")
+      const rejectBtn = document.getElementById("reject-verification")
+
+      if (approveBtn) approveBtn.disabled = false
+      if (rejectBtn) rejectBtn.disabled = false
 
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error updating verification status", "error")
@@ -978,41 +1097,67 @@ const adminModule = (() => {
         `
       }
 
-      // Query Firestore
-      const snapshot = await db.collection("users").get()
+      // Clean up existing listener
+      if (usersListener) {
+        usersListener()
+        usersListener = null
+      }
 
-      // Process results
-      usersList = []
+      // Set up real-time listener
+      usersListener = db.collection("users").onSnapshot(
+        (snapshot) => {
+          // Process results
+          usersList = []
 
-      snapshot.forEach((doc) => {
-        const userData = doc.data()
+          snapshot.forEach((doc) => {
+            const userData = doc.data()
 
-        usersList.push({
-          id: doc.id,
-          name: userData.name || "Unknown User",
-          email: userData.email || "",
-          photoURL: userData.photoURL || "",
-          createdAt: userData.createdAt,
-          lastActive: userData.lastActive,
-          status: userData.status || "active",
-          verified: userData.verification && userData.verification.status === "verified",
-        })
-      })
+            usersList.push({
+              id: doc.id,
+              name: userData.name || "Unknown User",
+              email: userData.email || "",
+              photoURL: userData.photoURL || "",
+              createdAt: userData.createdAt,
+              lastActive: userData.lastActive,
+              status: userData.status || "active",
+              verified: userData.verification && userData.verification.status === "verified",
+            })
+          })
 
-      // Sort by creation date (newest first)
-      usersList.sort((a, b) => {
-        const aTime = a.createdAt ? a.createdAt.toDate() : new Date(0)
-        const bTime = b.createdAt ? b.createdAt.toDate() : new Date(0)
+          // Sort by creation date (newest first)
+          usersList.sort((a, b) => {
+            const aTime = a.createdAt ? a.createdAt.toDate() : new Date(0)
+            const bTime = b.createdAt ? b.createdAt.toDate() : new Date(0)
 
-        return bTime - aTime
-      })
+            return bTime - aTime
+          })
 
-      hideLoadingOverlay()
+          hideLoadingOverlay()
 
-      // Render users
-      renderUsersList()
+          // Render users
+          renderUsersList()
+        },
+        (error) => {
+          console.error("Error in users listener:", error)
+          hideLoadingOverlay()
+
+          if (window.utils && window.utils.showNotification) {
+            window.utils.showNotification("Error loading users: " + error.message, "error")
+          }
+
+          // Show error state
+          const usersTableBody = document.getElementById("users-table-body")
+          if (usersTableBody) {
+            usersTableBody.innerHTML = `
+              <tr>
+                <td colspan="7" class="text-center">Error loading users. Please try again.</td>
+              </tr>
+            `
+          }
+        },
+      )
     } catch (error) {
-      console.error("Error loading users:", error)
+      console.error("Error setting up users listener:", error)
       hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {

@@ -232,6 +232,9 @@ const settingsModule = (() => {
       const photoInput = document.getElementById("verification-photo")
       if (!photoInput || !photoInput.files || !photoInput.files[0]) {
         console.error("No verification photo selected")
+        if (window.utils && window.utils.showNotification) {
+          window.utils.showNotification("Please select a verification photo", "error")
+        }
         return
       }
 
@@ -242,13 +245,19 @@ const settingsModule = (() => {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...'
       }
 
-      // Upload photo to storage
+      // Upload photo to storage using the verification module
       const file = photoInput.files[0]
-      const storageRef = storage.ref()
-      const fileRef = storageRef.child(`verification/${user.uid}/${Date.now()}_verification.jpg`)
+      let photoURL
 
-      await fileRef.put(file)
-      const photoURL = await fileRef.getDownloadURL()
+      if (window.verificationModule && window.verificationModule.uploadVerificationPhoto) {
+        photoURL = await window.verificationModule.uploadVerificationPhoto(file, user.uid)
+      } else {
+        // Fallback if verification module is not available
+        const storageRef = storage.ref()
+        const fileRef = storageRef.child(`verification/${user.uid}/${Date.now()}_verification.jpg`)
+        await fileRef.put(file)
+        photoURL = await fileRef.getDownloadURL()
+      }
 
       // Update user document with verification request
       await db
