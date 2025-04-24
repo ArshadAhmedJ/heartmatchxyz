@@ -216,12 +216,7 @@ window.onboardingModule = (() => {
 
   // Setup photo upload area with drag and drop
   const setupPhotoUploadArea = () => {
-    console.log("Setting up photo upload area")
-
-    if (!photoUploadArea) {
-      console.error("Photo upload area not found")
-      return
-    }
+    console.log("Setting up photo upload functionality")
 
     if (!photoUploadInput) {
       console.error("Photo upload input not found")
@@ -229,52 +224,7 @@ window.onboardingModule = (() => {
     }
 
     // Log elements to verify they exist
-    console.log("Photo upload area:", photoUploadArea)
     console.log("Photo upload input:", photoUploadInput)
-
-    // Prevent default drag behaviors
-    ;["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-      photoUploadArea.addEventListener(eventName, preventDefaults, false)
-    })
-
-    // Highlight drop area when item is dragged over it
-    ;["dragenter", "dragover"].forEach((eventName) => {
-      photoUploadArea.addEventListener(eventName, highlight, false)
-    })
-
-    // Remove highlight when item is dragged away
-    ;["dragleave", "drop"].forEach((eventName) => {
-      photoUploadArea.addEventListener(eventName, unhighlight, false)
-    })
-
-    // Handle dropped files
-    photoUploadArea.addEventListener("drop", handleDrop, false)
-
-    function preventDefaults(e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-
-    function highlight() {
-      photoUploadArea.classList.add("highlight")
-    }
-
-    function unhighlight() {
-      photoUploadArea.classList.remove("highlight")
-    }
-
-    function handleDrop(e) {
-      const dt = e.dataTransfer
-      const files = dt.files
-
-      // Find the first empty slot
-      const emptyIndex = userData.photos.findIndex((p) => !p)
-      if (emptyIndex !== -1 && files[0]) {
-        handlePhotoUpload({ target: { files: [files[0]] } }, emptyIndex)
-      } else if (userData.photos.length < 3 && files[0]) {
-        handlePhotoUpload({ target: { files: [files[0]] } }, userData.photos.length)
-      }
-    }
   }
 
   // Setup interests autocomplete with popular tags

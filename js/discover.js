@@ -602,6 +602,7 @@ const discoverModule = (() => {
 
     // Create card content
     card.innerHTML = `
+    <div class="close-fullscreen"><i class="fas fa-arrow-left"></i></div>
       <div class="profile-images">
         <div class="profile-image-main" style="background-image: url('${mainPhoto}')">
           <div class="profile-info transparent-bg">
@@ -649,6 +650,18 @@ const discoverModule = (() => {
     // Clear container and add new card
     cardContainer.innerHTML = ""
     cardContainer.appendChild(card)
+
+    // Add event listener to close button
+    const closeBtn = card.querySelector(".close-fullscreen")
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        // Go back to dashboard
+        if (window.dashboardModule && typeof window.dashboardModule.showSection === "function") {
+          window.dashboardModule.showSection("discover")
+          loadProfiles()
+        }
+      })
+    }
 
     // Add event listeners to thumbnails
     const thumbnails = card.querySelectorAll(".profile-image-thumb")
@@ -1244,6 +1257,7 @@ const discoverModule = (() => {
       confetti.style.animationDuration = `${duration}s`
 
       // Add to body
+      confetti.style.zIndex = "10000" // Ensure confetti appears above other elements
       document.body.appendChild(confetti)
 
       // Remove after animation

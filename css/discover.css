@@ -306,3 +306,185 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
 }
+
+/* Update the profile card to be full screen */
+.profile-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* Update the profile images container */
+.profile-images {
+  height: 100%;
+  width: 100%;
+}
+
+/* Update the main profile image */
+.profile-image-main {
+  height: 100%;
+  width: 100%;
+  border-radius: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Adjust the profile info position */
+.profile-info.transparent-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0) 100%);
+  border-radius: 0;
+  padding: 20px;
+}
+
+/* Make profile info text larger */
+.profile-info h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.profile-info p {
+  font-size: 1.2rem;
+}
+
+/* Adjust the action buttons position */
+.action-buttons {
+  position: fixed;
+  bottom: 30px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 101;
+}
+
+/* Make action buttons larger */
+#like-btn,
+#dislike-btn,
+#rose-btn {
+  width: 70px;
+  height: 70px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Adjust the thumbnails position */
+.profile-image-thumbnails {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-image-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Add a close button to exit full screen view */
+.close-fullscreen {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 102;
+}
+
+/* Adjust profile details */
+.profile-details {
+  position: absolute;
+  bottom: 120px;
+  left: 0;
+  width: 100%;
+  padding: 0 20px;
+  z-index: 101;
+}
+
+.profile-bio {
+  color: white;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.profile-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.interest-tag {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(5px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Adjust for mobile */
+@media (max-width: 768px) {
+  .profile-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .profile-info p {
+    font-size: 1rem;
+  }
+
+  #like-btn,
+  #dislike-btn,
+  #rose-btn {
+    width: 60px;
+    height: 60px;
+  }
+
+  .profile-image-thumb {
+    width: 50px;
+    height: 50px;
+  }
+
+  .profile-bio {
+    font-size: 1rem;
+  }
+}
+
+/* Adjust for very small screens */
+@media (max-width: 480px) {
+  .profile-info h2 {
+    font-size: 1.3rem;
+  }
+
+  #like-btn,
+  #dislike-btn,
+  #rose-btn {
+    width: 55px;
+    height: 55px;
+  }
+}
