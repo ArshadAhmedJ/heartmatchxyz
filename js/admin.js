@@ -26,9 +26,7 @@ const adminModule = (() => {
     showLoadingOverlay()
 
     // Initialize Firebase if not already initialized
-    if (!window.firebase) {
-      initializeFirebase()
-    }
+    initializeFirebase()
 
     // Get Firebase services
     if (window.firebase) {
@@ -40,9 +38,13 @@ const adminModule = (() => {
 
       // Set up auth state listener
       auth.onAuthStateChanged(handleAuthStateChanged)
+
+      // Set a timeout to check if we're stuck loading
+      setTimeout(checkIfStuckLoading, 10000)
     } else {
       console.error("Firebase not initialized in admin module")
       showError("Firebase initialization failed. Please try again later.")
+      hideLoadingOverlay()
       return
     }
 
@@ -63,22 +65,44 @@ const adminModule = (() => {
     console.log("Admin module initialized")
   }
 
+  // Check if we're stuck loading
+  const checkIfStuckLoading = () => {
+    const loadingOverlay = document.getElementById("loading-overlay")
+    if (loadingOverlay && !loadingOverlay.classList.contains("hidden")) {
+      console.log("Still loading after 10 seconds, might be stuck")
+      // Force show login screen
+      hideLoadingOverlay()
+      showLoginScreen()
+    }
+  }
+
   // Initialize Firebase
   const initializeFirebase = () => {
-    // Your Firebase config
-    const firebaseConfig = {
-      // This should be replaced with your actual Firebase config
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID",
-    }
+    try {
+      // Check if Firebase is already initialized
+      if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
+        console.log("Firebase already initialized")
+        return
+      }
 
-    // Initialize Firebase
-    if (!window.firebase.apps.length) {
+      // Your Firebase config - using the one from main.js
+      const firebaseConfig = {
+        apiKey: "AIzaSyAsc5FpnqdJdUXql2jAIPf7-VSLIv4TIv0",
+        authDomain: "datingapp-482ac.firebaseapp.com",
+        projectId: "datingapp-482ac",
+        storageBucket: "datingapp-482ac.firebasestorage.app",
+        messagingSenderId: "672058081482",
+        appId: "1:672058081482:web:d61e90a5f397eb46e4b433",
+        measurementId: "G-F300RLDGVF",
+      }
+
+      // Initialize Firebase
       window.firebase.initializeApp(firebaseConfig)
+      console.log("Firebase initialized successfully")
+    } catch (error) {
+      console.error("Error initializing Firebase:", error)
+      showError("Failed to initialize Firebase: " + error.message)
+      hideLoadingOverlay()
     }
   }
 
@@ -102,7 +126,7 @@ const adminModule = (() => {
     // Show loading overlay
     showLoadingOverlay()
 
-    // Sign in with redirect
+    // Sign in with popup
     const provider = new firebase.auth.GoogleAuthProvider()
     auth
       .signInWithPopup(provider)
@@ -137,28 +161,33 @@ const adminModule = (() => {
       console.log("Admin access granted for user:", currentUser.uid)
 
       // Get user data to display admin name and photo
-      const userDoc = await db.collection("users").doc(currentUser.uid).get()
+      try {
+        const userDoc = await db.collection("users").doc(currentUser.uid).get()
 
-      // Set admin name and photo
-      const adminName = document.getElementById("admin-name")
-      const adminPhoto = document.getElementById("admin-photo")
+        // Set admin name and photo
+        const adminName = document.getElementById("admin-name")
+        const adminPhoto = document.getElementById("admin-photo")
 
-      if (adminName) {
-        adminName.textContent = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
-      }
-
-      if (adminPhoto) {
-        if (userDoc.exists && userDoc.data().photoURL) {
-          adminPhoto.style.backgroundImage = `url(${userDoc.data().photoURL})`
-          adminPhoto.textContent = ""
-        } else if (currentUser.photoURL) {
-          adminPhoto.style.backgroundImage = `url(${currentUser.photoURL})`
-          adminPhoto.textContent = ""
-        } else {
-          // Set initials
-          const name = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
-          adminPhoto.textContent = name.charAt(0).toUpperCase()
+        if (adminName) {
+          adminName.textContent = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
         }
+
+        if (adminPhoto) {
+          if (userDoc.exists && userDoc.data().photoURL) {
+            adminPhoto.style.backgroundImage = `url(${userDoc.data().photoURL})`
+            adminPhoto.textContent = ""
+          } else if (currentUser.photoURL) {
+            adminPhoto.style.backgroundImage = `url(${currentUser.photoURL})`
+            adminPhoto.textContent = ""
+          } else {
+            // Set initials
+            const name = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
+            adminPhoto.textContent = name.charAt(0).toUpperCase()
+          }
+        }
+      } catch (error) {
+        console.error("Error getting user data:", error)
+        // Continue anyway, this is not critical
       }
 
       // Show admin panel
@@ -197,11 +226,13 @@ const adminModule = (() => {
     hideLoadingOverlay()
 
     // Hide admin panel and access denied
-    document.getElementById("admin-page").classList.add("hidden")
-    document.getElementById("access-denied-container").classList.add("hidden")
+    const adminPage = document.getElementById("admin-page")
+    const accessDenied = document.getElementById("access-denied-container")
+    const loginContainer = document.getElementById("admin-login-container")
 
-    // Show login container
-    document.getElementById("admin-login-container").classList.remove("hidden")
+    if (adminPage) adminPage.classList.add("hidden")
+    if (accessDenied) accessDenied.classList.add("hidden")
+    if (loginContainer) loginContainer.classList.remove("hidden")
   }
 
   // Show access denied
@@ -209,11 +240,13 @@ const adminModule = (() => {
     hideLoadingOverlay()
 
     // Hide admin panel and login
-    document.getElementById("admin-page").classList.add("hidden")
-    document.getElementById("admin-login-container").classList.add("hidden")
+    const adminPage = document.getElementById("admin-page")
+    const loginContainer = document.getElementById("admin-login-container")
+    const accessDenied = document.getElementById("access-denied-container")
 
-    // Show access denied container
-    document.getElementById("access-denied-container").classList.remove("hidden")
+    if (adminPage) adminPage.classList.add("hidden")
+    if (loginContainer) loginContainer.classList.add("hidden")
+    if (accessDenied) accessDenied.classList.remove("hidden")
   }
 
   // Show admin panel
@@ -221,11 +254,13 @@ const adminModule = (() => {
     hideLoadingOverlay()
 
     // Hide login and access denied
-    document.getElementById("admin-login-container").classList.add("hidden")
-    document.getElementById("access-denied-container").classList.add("hidden")
+    const loginContainer = document.getElementById("admin-login-container")
+    const accessDenied = document.getElementById("access-denied-container")
+    const adminPage = document.getElementById("admin-page")
 
-    // Show admin panel
-    document.getElementById("admin-page").classList.remove("hidden")
+    if (loginContainer) loginContainer.classList.add("hidden")
+    if (accessDenied) accessDenied.classList.add("hidden")
+    if (adminPage) adminPage.classList.remove("hidden")
   }
 
   // Show error notification
@@ -510,13 +545,19 @@ const adminModule = (() => {
       }
 
       // Create chart
-      const ctx = document.getElementById("user-growth-chart").getContext("2d")
+      const ctx = document.getElementById("user-growth-chart")
+      if (!ctx) {
+        console.error("User growth chart canvas not found")
+        return
+      }
+
+      const context = ctx.getContext("2d")
 
       if (window.userGrowthChart) {
         window.userGrowthChart.destroy()
       }
 
-      window.userGrowthChart = new Chart(ctx, {
+      window.userGrowthChart = new Chart(context, {
         type: "line",
         data: {
           labels: months,
@@ -569,13 +610,19 @@ const adminModule = (() => {
       }
 
       // Create chart
-      const ctx = document.getElementById("response-time-chart").getContext("2d")
+      const ctx = document.getElementById("response-time-chart")
+      if (!ctx) {
+        console.error("Response time chart canvas not found")
+        return
+      }
+
+      const context = ctx.getContext("2d")
 
       if (window.responseTimeChart) {
         window.responseTimeChart.destroy()
       }
 
-      window.responseTimeChart = new Chart(ctx, {
+      window.responseTimeChart = new Chart(context, {
         type: "line",
         data: {
           labels: labels,
@@ -617,10 +664,15 @@ const adminModule = (() => {
       const authDelay = Math.floor(Math.random() * 80) + 40
 
       // Update UI
-      document.getElementById("api-response-time").textContent = `${apiResponseTime} ms`
-      document.getElementById("db-latency").textContent = `${dbLatency} ms`
-      document.getElementById("storage-performance").textContent = `${storagePerformance} ms`
-      document.getElementById("auth-delay").textContent = `${authDelay} ms`
+      const apiResponseTimeEl = document.getElementById("api-response-time")
+      const dbLatencyEl = document.getElementById("db-latency")
+      const storagePerformanceEl = document.getElementById("storage-performance")
+      const authDelayEl = document.getElementById("auth-delay")
+
+      if (apiResponseTimeEl) apiResponseTimeEl.textContent = `${apiResponseTime} ms`
+      if (dbLatencyEl) dbLatencyEl.textContent = `${dbLatency} ms`
+      if (storagePerformanceEl) storagePerformanceEl.textContent = `${storagePerformance} ms`
+      if (authDelayEl) authDelayEl.textContent = `${authDelay} ms`
 
       // Update status indicators
       updateStatusIndicator("api-status", apiResponseTime, 100, 200)
@@ -1257,13 +1309,19 @@ const adminModule = (() => {
 
   // Render response trend chart
   const renderResponseTrendChart = (timeRange) => {
-    const ctx = document.getElementById("response-trend-chart").getContext("2d")
+    const ctx = document.getElementById("response-trend-chart")
+    if (!ctx) {
+      console.error("Response trend chart canvas not found")
+      return
+    }
+
+    const context = ctx.getContext("2d")
 
     if (window.responseTrendChart) {
       window.responseTrendChart.destroy()
     }
 
-    window.responseTrendChart = new Chart(ctx, {
+    window.responseTrendChart = new Chart(context, {
       type: "line",
       data: {
         labels: performanceData.labels,
@@ -1303,7 +1361,13 @@ const adminModule = (() => {
 
   // Render endpoint performance chart
   const renderEndpointPerformanceChart = () => {
-    const ctx = document.getElementById("endpoint-performance-chart").getContext("2d")
+    const ctx = document.getElementById("endpoint-performance-chart")
+    if (!ctx) {
+      console.error("Endpoint performance chart canvas not found")
+      return
+    }
+
+    const context = ctx.getContext("2d")
 
     if (window.endpointPerformanceChart) {
       window.endpointPerformanceChart.destroy()
@@ -1314,7 +1378,7 @@ const adminModule = (() => {
 
     const responseTimes = endpoints.map(() => Math.floor(Math.random() * 150) + 50)
 
-    window.endpointPerformanceChart = new Chart(ctx, {
+    window.endpointPerformanceChart = new Chart(context, {
       type: "bar",
       data: {
         labels: endpoints,
@@ -1351,7 +1415,13 @@ const adminModule = (() => {
 
   // Render error distribution chart
   const renderErrorDistributionChart = () => {
-    const ctx = document.getElementById("error-distribution-chart").getContext("2d")
+    const ctx = document.getElementById("error-distribution-chart")
+    if (!ctx) {
+      console.error("Error distribution chart canvas not found")
+      return
+    }
+
+    const context = ctx.getContext("2d")
 
     if (window.errorDistributionChart) {
       window.errorDistributionChart.destroy()
@@ -1362,7 +1432,7 @@ const adminModule = (() => {
 
     const errorCounts = errorTypes.map(() => Math.floor(Math.random() * 50))
 
-    window.errorDistributionChart = new Chart(ctx, {
+    window.errorDistributionChart = new Chart(context, {
       type: "doughnut",
       data: {
         labels: errorTypes,
@@ -1394,7 +1464,13 @@ const adminModule = (() => {
 
   // Render user activity chart
   const renderUserActivityChart = (timeRange) => {
-    const ctx = document.getElementById("user-activity-chart").getContext("2d")
+    const ctx = document.getElementById("user-activity-chart")
+    if (!ctx) {
+      console.error("User activity chart canvas not found")
+      return
+    }
+
+    const context = ctx.getContext("2d")
 
     if (window.userActivityChart) {
       window.userActivityChart.destroy()
@@ -1405,7 +1481,7 @@ const adminModule = (() => {
     const newMatches = performanceData.labels.map(() => Math.floor(Math.random() * 30) + 5)
     const messages = performanceData.labels.map(() => Math.floor(Math.random() * 200) + 100)
 
-    window.userActivityChart = new Chart(ctx, {
+    window.userActivityChart = new Chart(context, {
       type: "line",
       data: {
         labels: performanceData.labels,
@@ -1631,34 +1707,6 @@ const adminModule = (() => {
 
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error adding admin: " + error.message, "error")
-      }
-    }
-  }
-
-  // Remove admin
-  const removeAdmin = async (id) => {
-    try {
-      // Hardcoded admin UIDs that cannot be removed
-      const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
-
-      // Check if trying to remove a hardcoded admin
-      if (adminUIDs.includes(id)) {
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification("Cannot remove hardcoded admin users", "error")
-        }
-        return
-      }
-
-      // This code should never execute since we've disabled the remove buttons
-      // But keeping it as a fallback security measure
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Admin removal is disabled", "error")
-      }
-    } catch (error) {
-      console.error("Error removing admin:", error)
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error removing admin", "error")
       }
     }
   }
