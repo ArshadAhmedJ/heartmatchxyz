@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Admin Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -1065,36 +1066,59 @@ const adminModule = (() => {
         dashboardStatsListener()
       }
 
-      // Get counts from Firestore
-      const usersSnapshot = await db.collection("users").get()
-      const totalUsers = usersSnapshot.size
+      // Check if user is authenticated
+      if (!auth.currentUser) {
+        throw new Error("User not authenticated")
+      }
 
-      // Get active users (active in last 7 days)
-      const sevenDaysAgo = new Date()
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      // Add error handling for each query
+      try {
+        // Get counts from Firestore
+        const usersSnapshot = await db.collection("users").get()
+        const totalUsers = usersSnapshot.size
 
-      let activeUsers = 0
-      usersSnapshot.forEach((doc) => {
-        const userData = doc.data()
-        if (userData.lastActive && userData.lastActive.toDate() > sevenDaysAgo) {
-          activeUsers++
-        }
-      })
+        // Get active users (active in last 7 days)
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-      // Get matches count
-      const matchesSnapshot = await db.collection("matches").get()
-      const totalMatches = matchesSnapshot.size
+        let activeUsers = 0
+        usersSnapshot.forEach((doc) => {
+          const userData = doc.data()
+          if (userData.lastActive && userData.lastActive.toDate() > sevenDaysAgo) {
+            activeUsers++
+          }
+        })
 
-      // Get pending verification count
-      const verificationSnapshot = await db.collection("users").where("verification.status", "==", "pending").get()
-      const pendingVerification = verificationSnapshot.size
+        // Update stats
+        document.getElementById("total-users").textContent = totalUsers
+        document.getElementById("active-users").textContent = activeUsers
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        document.getElementById("total-users").textContent = "Error"
+        document.getElementById("active-users").textContent = "Error"
+      }
 
-      // Update stats
-      document.getElementById("total-users").textContent = totalUsers
-      document.getElementById("active-users").textContent = activeUsers
-      document.getElementById("total-matches").textContent = totalMatches
-      document.getElementById("pending-verification").textContent = pendingVerification
-      document.getElementById("verification-badge").textContent = pendingVerification
+      try {
+        // Get matches count
+        const matchesSnapshot = await db.collection("matches").get()
+        const totalMatches = matchesSnapshot.size
+        document.getElementById("total-matches").textContent = totalMatches
+      } catch (error) {
+        console.error("Error fetching matches data:", error)
+        document.getElementById("total-matches").textContent = "Error"
+      }
+
+      try {
+        // Get pending verification count
+        const verificationSnapshot = await db.collection("users").where("verification.status", "==", "pending").get()
+        const pendingVerification = verificationSnapshot.size
+        document.getElementById("pending-verification").textContent = pendingVerification
+        document.getElementById("verification-badge").textContent = pendingVerification
+      } catch (error) {
+        console.error("Error fetching verification data:", error)
+        document.getElementById("pending-verification").textContent = "Error"
+        document.getElementById("verification-badge").textContent = "!"
+      }
 
       // Update last updated time
       const lastUpdated = document.getElementById("last-updated")
@@ -1105,32 +1129,59 @@ const adminModule = (() => {
 
       hideLoadingOverlay()
 
-      // Load charts
-      loadUserGrowthChart()
-      loadResponseTimeChart()
-      loadSystemHealthData()
+      // Load charts with error handling
+      try {
+        loadUserGrowthChart()
+      } catch (error) {
+        console.error("Error loading user growth chart:", error)
+      }
 
-      // Set up real-time listener for pending verifications
-      dashboardStatsListener = db
-        .collection("users")
-        .where("verification.status", "==", "pending")
-        .onSnapshot(
-          (snapshot) => {
-            const pendingCount = snapshot.size
-            document.getElementById("pending-verification").textContent = pendingCount
-            document.getElementById("verification-badge").textContent = pendingCount
-          },
-          (error) => {
-            console.error("Error in verification listener:", error)
-          },
-        )
+      try {
+        loadResponseTimeChart()
+      } catch (error) {
+        console.error("Error loading response time chart:", error)
+      }
+
+      try {
+        loadSystemHealthData()
+      } catch (error) {
+        console.error("Error loading system health data:", error)
+      }
+
+      // Set up real-time listener for pending verifications with error handling
+      try {
+        dashboardStatsListener = db
+          .collection("users")
+          .where("verification.status", "==", "pending")
+          .onSnapshot(
+            (snapshot) => {
+              const pendingCount = snapshot.size
+              document.getElementById("pending-verification").textContent = pendingCount
+              document.getElementById("verification-badge").textContent = pendingCount
+            },
+            (error) => {
+              console.error("Error in verification listener:", error)
+              document.getElementById("pending-verification").textContent = "Error"
+              document.getElementById("verification-badge").textContent = "!"
+            },
+          )
+      } catch (error) {
+        console.error("Error setting up verification listener:", error)
+      }
     } catch (error) {
       console.error("Error loading dashboard data:", error)
       hideLoadingOverlay()
 
+      // Show error notification but don't block the UI
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading dashboard data: " + error.message, "error")
+        window.utils.showNotification("Error loading some dashboard data: " + error.message, "warning")
       }
+
+      // Set error states for counters
+      document.getElementById("total-users").textContent = "Error"
+      document.getElementById("active-users").textContent = "Error"
+      document.getElementById("total-matches").textContent = "Error"
+      document.getElementById("pending-verification").textContent = "Error"
     }
   }
 
