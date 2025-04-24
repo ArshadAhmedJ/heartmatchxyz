@@ -216,7 +216,7 @@ const profileModule = (() => {
                 
                 ${
                   isCurrentUser && isEditing
-                    ? Array(Math.max(0, 6 - photos.length))
+                    ? Array(Math.max(0, 3 - photos.length))
                         .fill()
                         .map(
                           () => `
@@ -477,6 +477,11 @@ const profileModule = (() => {
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
       }
 
+      // Clean up photos array (remove nulls)
+      if (updatedData.photos) {
+        updatedData.photos = updatedData.photos.filter((photo) => photo !== null)
+      }
+
       // Save to Firestore
       await db.collection("users").doc(user.uid).update(updatedData)
 
@@ -524,18 +529,29 @@ const profileModule = (() => {
       // Get download URL
       const photoURL = await snapshot.ref.getDownloadURL()
 
-      // Update user data
-      const photos = userData.photos || []
-      photos.push(photoURL)
+      // Initialize photos array if it doesn't exist
+      if (!userData.photos) {
+        userData.photos = []
+      }
+
+      // Add photo to array (limit to 3 photos)
+      if (userData.photos.length < 3) {
+        userData.photos.push(photoURL)
+      } else {
+        // Replace the first null value or add to the end if no nulls
+        const nullIndex = userData.photos.findIndex((photo) => photo === null)
+        if (nullIndex !== -1) {
+          userData.photos[nullIndex] = photoURL
+        } else {
+          userData.photos[2] = photoURL // Replace the last photo if we already have 3
+        }
+      }
 
       // Save to Firestore
       await db.collection("users").doc(user.uid).update({
-        photos,
+        photos: userData.photos,
         lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
       })
-
-      // Update local data
-      userData.photos = photos
 
       // Reload profile
       renderProfile(userData)
@@ -566,7 +582,8 @@ const profileModule = (() => {
       // Update user data
       const photos = userData.photos || []
       if (index >= 0 && index < photos.length) {
-        photos.splice(index, 1)
+        // Mark the photo as null instead of removing it to maintain indexes
+        photos[index] = null
 
         // Save to Firestore
         await db.collection("users").doc(user.uid).update({

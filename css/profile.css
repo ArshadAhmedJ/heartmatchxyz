@@ -140,7 +140,7 @@
 /* Photos Gallery */
 .profile-photos-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
 }
 
@@ -215,6 +215,7 @@
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s ease;
+  z-index: 10;
 }
 
 .profile-photo-item:hover .photo-delete-btn {
