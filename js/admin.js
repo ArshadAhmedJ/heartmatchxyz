@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Admin Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -6,7 +7,7 @@ const adminModule = (() => {
   // State
   let currentUser = null
   let currentSection = "dashboard"
-  let verificationRequests = []
+  const verificationRequests = []
   let selectedVerification = null
   let usersList = []
   let currentPage = 1
@@ -25,6 +26,61 @@ const adminModule = (() => {
   // Initialize admin module
   const init = () => {
     console.log("Initializing admin module")
+
+    // Add styles to the head for verification buttons if not already there
+    if (!document.getElementById("admin-verification-styles")) {
+      const style = document.createElement("style")
+      style.id = "admin-verification-styles"
+      style.innerHTML = `
+    .verification-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .verification-actions button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 500;
+    }
+    
+    .verification-actions .approve-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    
+    .verification-actions .reject-btn {
+      background-color: #F44336;
+      color: white;
+    }
+    
+    .verification-actions button:hover {
+      opacity: 0.9;
+    }
+    
+    .verification-actions button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .verification-detail-photo {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .user-additional-info {
+      margin-bottom: 15px;
+    }
+  `
+      document.head.appendChild(style)
+    }
 
     // Show loading overlay
     showLoadingOverlay()
@@ -760,168 +816,232 @@ const adminModule = (() => {
   }
 
   // Load verification requests
-  const loadVerificationRequests = async (status = "pending") => {
-    try {
-      showLoadingOverlay()
+  let unsubscribeVerificationListener = null
+  const verificationContainer = document.getElementById("verification-section")
 
-      // Show loading state
-      const verificationList = document.getElementById("verification-list")
-      if (verificationList) {
-        verificationList.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading verification requests...</p>
-          </div>
-        `
-      }
+  const loadVerificationRequests = (status = "pending") => {
+    if (!verificationContainer) return
 
-      // Clear selected verification
-      selectedVerification = null
+    // Clear existing content
+    verificationContainer.innerHTML = "<h3>Verification Requests</h3>"
 
-      // Reset verification detail
-      const verificationDetail = document.getElementById("verification-detail")
-      if (verificationDetail) {
-        verificationDetail.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-user-check"></i>
-            <p>Select a verification request to view details</p>
-          </div>
-        `
-      }
+    // Create loading indicator
+    const loadingSpinner = document.createElement("div")
+    loadingSpinner.className = "loading-spinner"
+    loadingSpinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading verification requests...'
+    verificationContainer.appendChild(loadingSpinner)
 
-      // Clean up existing listener
-      if (verificationListener) {
-        verificationListener()
-        verificationListener = null
-      }
-
-      // Set up real-time listener
-      verificationListener = db
-        .collection("users")
-        .where("verification.status", "==", status)
-        .onSnapshot(
-          (snapshot) => {
-            // Process results
-            verificationRequests = []
-
-            snapshot.forEach((doc) => {
-              const userData = doc.data()
-
-              if (userData.verification) {
-                verificationRequests.push({
-                  id: doc.id,
-                  name: userData.name || "Unknown User",
-                  email: userData.email || "",
-                  photoURL: userData.photoURL || "",
-                  verification: userData.verification,
-                })
-              }
-            })
-
-            // Sort by timestamp (newest first)
-            verificationRequests.sort((a, b) => {
-              const aTime = a.verification.timestamp ? a.verification.timestamp.toDate() : new Date(0)
-              const bTime = b.verification.timestamp ? b.verification.timestamp.toDate() : new Date(0)
-
-              return bTime - aTime
-            })
-
-            hideLoadingOverlay()
-
-            // Render list
-            renderVerificationList()
-          },
-          (error) => {
-            console.error("Error in verification listener:", error)
-            hideLoadingOverlay()
-
-            if (window.utils && window.utils.showNotification) {
-              window.utils.showNotification("Error loading verification requests: " + error.message, "error")
-            }
-
-            // Show error state
-            const verificationList = document.getElementById("verification-list")
-            if (verificationList) {
-              verificationList.innerHTML = `
-              <div class="empty-state">
-                <i class="fas fa-exclamation-circle"></i>
-                <p>Error loading verification requests. Please try again.</p>
-              </div>
-            `
-            }
-          },
-        )
-    } catch (error) {
-      console.error("Error setting up verification listener:", error)
-      hideLoadingOverlay()
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading verification requests: " + error.message, "error")
-      }
-
-      // Show error state
-      const verificationList = document.getElementById("verification-list")
-      if (verificationList) {
-        verificationList.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-circle"></i>
-            <p>Error loading verification requests. Please try again.</p>
-          </div>
-        `
-      }
+    // Unsubscribe from previous listener if it exists
+    if (unsubscribeVerificationListener) {
+      unsubscribeVerificationListener()
+      unsubscribeVerificationListener = null
     }
+
+    // Set up real-time listener for verification requests
+    unsubscribeVerificationListener = db
+      .collection("users")
+      .where("verification.status", "==", status)
+      .onSnapshot(
+        async (snapshot) => {
+          // Remove loading spinner
+          if (loadingSpinner.parentNode) {
+            loadingSpinner.parentNode.removeChild(loadingSpinner)
+          }
+
+          // Check if there are any pending verification requests
+          if (snapshot.empty) {
+            const emptyMessage = document.createElement("div")
+            emptyMessage.className = "empty-message"
+            emptyMessage.innerHTML = `<i class="fas fa-check-circle"></i><p>No ${status} verification requests</p>`
+            verificationContainer.appendChild(emptyMessage)
+            return
+          }
+
+          // Create container for verification cards
+          const cardContainer = document.createElement("div")
+          cardContainer.className = "verification-card-container"
+          verificationContainer.appendChild(cardContainer)
+
+          // Add each verification request
+          snapshot.forEach((doc) => {
+            const userData = doc.data()
+            const userId = doc.id
+
+            if (userData.verification) {
+              const verificationCard = createVerificationCard(userId, userData)
+              cardContainer.appendChild(verificationCard)
+            }
+          })
+        },
+        (error) => {
+          console.error("Error loading verification requests:", error)
+          if (loadingSpinner.parentNode) {
+            loadingSpinner.parentNode.removeChild(loadingSpinner)
+          }
+
+          const errorMessage = document.createElement("div")
+          errorMessage.className = "error-message"
+          errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i><p>Error loading verification requests: ${error.message}</p>`
+          verificationContainer.appendChild(errorMessage)
+        },
+      )
   }
 
-  // Render verification list
-  const renderVerificationList = () => {
-    const verificationList = document.getElementById("verification-list")
-    if (!verificationList) return
+  // Create verification card
+  const createVerificationCard = (userId, userData) => {
+    const card = document.createElement("div")
+    card.className = "verification-card"
 
-    if (verificationRequests.length === 0) {
-      verificationList.innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-user-check"></i>
-          <p>No verification requests found</p>
-        </div>
-      `
-      return
+    // Extract user info
+    const name = userData.name || "Unknown User"
+    const email = userData.email || "No Email"
+    const phone = userData.phone || "No Phone"
+    const photoURL = userData.photoURL || "/images/default-avatar.png"
+    const verificationPhotoURL =
+      userData.verification && userData.verification.photoURL
+        ? userData.verification.photoURL
+        : "/images/verification-pose.png"
+    const verificationTimestamp =
+      userData.verification && userData.verification.timestamp
+        ? new Date(userData.verification.timestamp.seconds * 1000).toLocaleString()
+        : "Unknown date"
+
+    // Create card HTML
+    card.innerHTML = `
+    <div class="verification-user-info">
+      <img src="${photoURL}" alt="${name}" class="user-avatar" onerror="this.src='/images/default-avatar.png'">
+      <div class="user-details">
+        <h4>${name}</h4>
+        <p class="user-id">ID: ${userId}</p>
+        <p class="user-email">Email: ${email}</p>
+        <p class="user-phone">Phone: ${phone}</p>
+        <p class="verification-date">Requested: ${verificationTimestamp}</p>
+      </div>
+    </div>
+    <div class="verification-photo-container">
+      <img src="${verificationPhotoURL}" alt="Verification photo" class="verification-photo" onerror="this.src='/images/verification-pose.png'">
+    </div>
+    <div class="verification-actions">
+      <button class="btn approve-btn" data-user-id="${userId}">
+        <i class="fas fa-check"></i> Approve
+      </button>
+      <button class="btn reject-btn" data-user-id="${userId}">
+        <i class="fas fa-times"></i> Reject
+      </button>
+    </div>
+  `
+
+    // Add event listeners for approve and reject buttons
+    const approveBtn = card.querySelector(".approve-btn")
+    const rejectBtn = card.querySelector(".reject-btn")
+
+    if (approveBtn) {
+      approveBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        handleVerificationAction(userId, "verified", verificationPhotoURL)
+      })
     }
 
-    let html = ""
-
-    verificationRequests.forEach((request) => {
-      const timestamp = request.verification.timestamp
-        ? request.verification.timestamp.toDate().toLocaleDateString()
-        : "Unknown"
-
-      html += `
-        <div class="verification-item" data-id="${request.id}">
-          <div class="verification-item-header">
-            <span class="verification-item-name">${request.name}</span>
-            <span class="verification-item-date">${timestamp}</span>
-          </div>
-          <div class="verification-item-status ${request.verification.status}">
-            ${request.verification.status}
-          </div>
-        </div>
-      `
-    })
-
-    verificationList.innerHTML = html
-
-    // Add click event to items
-    document.querySelectorAll(".verification-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        const id = item.getAttribute("data-id")
-        selectVerification(id)
-
-        // Update active class
-        document.querySelectorAll(".verification-item").forEach((i) => {
-          i.classList.remove("active")
-        })
-        item.classList.add("active")
+    if (rejectBtn) {
+      rejectBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        const confirmed = confirm(
+          `Are you sure you want to reject ${name}'s verification? This will DELETE their account.`,
+        )
+        if (confirmed) {
+          handleVerificationAction(userId, "rejected", verificationPhotoURL)
+        }
       })
-    })
+    }
+
+    return card
+  }
+
+  // Handle verification action (approve or reject)
+  const handleVerificationAction = async (userId, status, photoURL) => {
+    try {
+      // Action is now confirmed in the button click handler
+      const action = status === "verified" ? "approve" : "reject & delete account"
+
+      // Get user data to show in notifications
+      const userDoc = await db.collection("users").doc(userId).get()
+      const userData = userDoc.data()
+      const userName = userData.name || "Unknown User"
+
+      // Update user document
+      if (status === "verified") {
+        await db.collection("users").doc(userId).update({
+          "verification.status": status,
+          "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
+          "verification.reviewedBy": auth.currentUser.uid,
+          verified: true,
+        })
+
+        // Show success notification
+        if (window.utils && window.utils.showNotification) {
+          window.utils.showNotification(`Verification for ${userName} approved successfully!`, "success")
+        } else {
+          alert(`Verification for ${userName} approved successfully!`)
+        }
+      } else if (status === "rejected") {
+        // Log rejection in a separate collection
+        await db
+          .collection("rejectedUsers")
+          .doc(userId)
+          .set({
+            ...userData,
+            rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            rejectedBy: auth.currentUser.uid,
+            originalId: userId,
+          })
+
+        // Mark for deletion (for a Cloud Function to handle)
+        await db.collection("users").doc(userId).update({
+          pendingDeletion: true,
+          deletionRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          deletionRequestedBy: auth.currentUser.uid,
+        })
+
+        // Delete from Firestore
+        await db.collection("users").doc(userId).delete()
+
+        // Show success notification
+        if (window.utils && window.utils.showNotification) {
+          window.utils.showNotification(`User ${userName} rejected and account deleted!`, "success")
+        } else {
+          alert(`User ${userName} rejected and account deleted!`)
+        }
+      }
+
+      // Delete verification photo from storage
+      if (photoURL && storage) {
+        try {
+          // Extract the path from the URL
+          const storageRef = storage.refFromURL(photoURL)
+          await storageRef.delete()
+          console.log(`Verification photo deleted: ${photoURL}`)
+        } catch (deleteError) {
+          console.error("Error deleting verification photo:", deleteError)
+        }
+      }
+
+      // Reload verification requests
+      loadVerificationRequests("pending")
+
+      // Reload dashboard data
+      loadDashboardData()
+    } catch (error) {
+      console.error(`Error ${status === "verified" ? "approving" : "rejecting"} verification:`, error)
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification(
+          `Error ${status === "verified" ? "approving" : "rejecting"} verification: ${error.message}`,
+          "error",
+        )
+      } else {
+        alert(`Error ${status === "verified" ? "approving" : "rejecting"} verification. Please try again.`)
+      }
+    }
   }
 
   // Select verification
@@ -941,139 +1061,80 @@ const adminModule = (() => {
       ? request.verification.timestamp.toDate().toLocaleString()
       : "Unknown"
 
+    // Get additional user details
+    const email = request.email || "No Email"
+    const phone = request.phone || "No Phone"
+    const bio = request.bio || "No Bio"
+    const age = request.age || "Unknown Age"
+    const gender = request.gender || "Not Specified"
+
     verificationDetail.innerHTML = `
-      <div class="verification-detail-header">
-        <div class="verification-detail-user">
-          <img src="${request.photoURL || "images/default-avatar.png"}" alt="${request.name}" class="verification-detail-photo">
-          <div class="verification-detail-info">
-            <h3>${request.name}</h3>
-            <p>${request.email}</p>
-          </div>
-        </div>
-        <div class="verification-detail-status ${request.verification.status}">
-          ${request.verification.status}
+    <div class="verification-detail-header">
+      <div class="verification-detail-user">
+        <img src="${request.photoURL || "/images/default-avatar.png"}" alt="${request.name}" class="verification-detail-photo" onerror="this.src='/images/default-avatar.png'">
+        <div class="verification-detail-info">
+          <h3>${request.name}</h3>
+          <p>ID: ${request.id}</p>
+          <p>Email: ${email}</p>
+          <p>Phone: ${phone}</p>
         </div>
       </div>
-      
-      <div class="verification-detail-content">
+      <div class="verification-detail-status ${request.verification.status}">
+        ${request.verification.status}
+      </div>
+    </div>
+    
+    <div class="verification-detail-content">
+      <div class="user-additional-info">
+        <p><strong>Age:</strong> ${age}</p>
+        <p><strong>Gender:</strong> ${gender}</p>
+        <p><strong>Bio:</strong> ${bio}</p>
         <p><strong>Submitted:</strong> ${timestamp}</p>
-        
-        <div class="verification-photos">
-          <div class="verification-photo">
-            <img src="${request.verification.photoURL}" alt="Verification photo">
-            <p class="verification-photo-label">Verification Photo</p>
-          </div>
-          <div class="verification-photo">
-            <img src="${request.photoURL}" alt="Profile photo" class="verification-detail-photo">
-            <p class="verification-photo-label">Profile Photo</p>
-          </div>
-        </div>
       </div>
       
-      <div class="verification-actions">
-        <button class="approve-btn" id="approve-verification">Approve</button>
-        <button class="reject-btn" id="reject-verification">Reject</button>
+      <div class="verification-photos">
+        <div class="verification-photo">
+          <img src="${request.verification.photoURL || "/images/verification-pose.png"}" alt="Verification photo" onerror="this.src='/images/verification-pose.png'">
+          <p class="verification-photo-label">Verification Photo</p>
+        </div>
+        <div class="verification-photo">
+          <img src="${request.photoURL || "/images/default-avatar.png"}" alt="Profile photo" class="verification-detail-photo" onerror="this.src='/images/default-avatar.png'">
+          <p class="verification-photo-label">Profile Photo</p>
+        </div>
       </div>
-    `
+    </div>
+    
+    <div class="verification-actions">
+      <button class="approve-btn" id="approve-verification">
+        <i class="fas fa-check"></i> Approve
+      </button>
+      <button class="reject-btn" id="reject-verification">
+        <i class="fas fa-times"></i> Reject & Delete Account
+      </button>
+    </div>
+  `
 
     // Add event listeners
     const approveBtn = document.getElementById("approve-verification")
     const rejectBtn = document.getElementById("reject-verification")
 
     if (approveBtn) {
-      approveBtn.addEventListener("click", () => updateVerificationStatus("verified"))
+      approveBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        updateVerificationStatus("verified")
+      })
     }
 
     if (rejectBtn) {
-      rejectBtn.addEventListener("click", () => updateVerificationStatus("rejected"))
-    }
-  }
-
-  // Update verification status
-  const updateVerificationStatus = async (status) => {
-    try {
-      if (!selectedVerification) return
-
-      // Show loading state
-      const approveBtn = document.getElementById("approve-verification")
-      const rejectBtn = document.getElementById("reject-verification")
-
-      if (approveBtn) approveBtn.disabled = true
-      if (rejectBtn) rejectBtn.disabled = true
-
-      // Get the verification photo URL before updating
-      const photoURL = selectedVerification.verification.photoURL
-
-      // Update Firestore
-      await db.collection("users").doc(selectedVerification.id).update({
-        "verification.status": status,
-        "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
-        "verification.reviewedBy": auth.currentUser.uid,
-        // Remove the photoURL if approved or rejected
-        "verification.photoURL": firebase.firestore.FieldValue.delete(),
-      })
-
-      // Delete the verification photo from storage
-      if (photoURL && storage) {
-        try {
-          // Extract the path from the URL
-          const storageRef = storage.refFromURL(photoURL)
-          await storageRef.delete()
-          console.log("Verification photo deleted successfully")
-        } catch (error) {
-          console.error("Error deleting verification photo:", error)
-          // Continue anyway, this is not critical
-        }
-      }
-
-      // Show notification
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification(
-          `Verification ${status === "verified" ? "approved" : "rejected"} successfully`,
-          "success",
+      rejectBtn.addEventListener("click", (e) => {
+        e.preventDefault()
+        const confirmed = confirm(
+          `Are you sure you want to reject ${request.name}'s verification? This will DELETE their account.`,
         )
-      }
-
-      // Update local data
-      selectedVerification.verification.status = status
-      selectedVerification.verification.photoURL = null
-
-      // Update UI
-      const statusElement = document.querySelector(".verification-detail-status")
-      if (statusElement) {
-        statusElement.className = `verification-detail-status ${status}`
-        statusElement.textContent = status
-      }
-
-      // Update list item
-      const listItem = document.querySelector(`.verification-item[data-id="${selectedVerification.id}"]`)
-      if (listItem) {
-        const statusElement = listItem.querySelector(".verification-item-status")
-        if (statusElement) {
-          statusElement.className = `verification-item-status ${status}`
-          statusElement.textContent = status
+        if (confirmed) {
+          updateVerificationStatus("rejected")
         }
-      }
-
-      // Re-enable buttons
-      if (approveBtn) approveBtn.disabled = false
-      if (rejectBtn) rejectBtn.disabled = false
-
-      // Reload verification count
-      loadDashboardData()
-    } catch (error) {
-      console.error("Error updating verification status:", error)
-
-      // Re-enable buttons
-      const approveBtn = document.getElementById("approve-verification")
-      const rejectBtn = document.getElementById("reject-verification")
-
-      if (approveBtn) approveBtn.disabled = false
-      if (rejectBtn) rejectBtn.disabled = false
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error updating verification status", "error")
-      }
+      })
     }
   }
 
@@ -1924,6 +1985,113 @@ const adminModule = (() => {
 
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error saving system settings: " + error.message, "error")
+      }
+    }
+  }
+
+  // Update verification status
+  const updateVerificationStatus = async (status) => {
+    try {
+      if (!selectedVerification) return
+
+      // Show loading state
+      const approveBtn = document.getElementById("approve-verification")
+      const rejectBtn = document.getElementById("reject-verification")
+
+      if (approveBtn) approveBtn.disabled = true
+      if (rejectBtn) rejectBtn.disabled = true
+
+      // Get the verification photo URL before updating
+      const photoURL = selectedVerification.verification.photoURL
+      const userId = selectedVerification.id
+
+      if (status === "verified") {
+        // Approve the user
+        await db.collection("users").doc(userId).update({
+          "verification.status": status,
+          "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
+          "verification.reviewedBy": auth.currentUser.uid,
+          // Remove the photoURL if approved
+          "verification.photoURL": firebase.firestore.FieldValue.delete(),
+          // Update verified status
+          verified: true,
+        })
+
+        // Show notification
+        if (window.utils && window.utils.showNotification) {
+          window.utils.showNotification("Verification approved successfully", "success")
+        }
+      } else if (status === "rejected") {
+        // For rejection, we'll delete the entire user account
+
+        // First, get all user data for record keeping
+        const userDoc = await db.collection("users").doc(userId).get()
+        const userData = userDoc.data()
+
+        // Log the rejection in a separate collection for audit purposes
+        await db
+          .collection("rejectedUsers")
+          .doc(userId)
+          .set({
+            ...userData,
+            rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            rejectedBy: auth.currentUser.uid,
+            originalId: userId,
+          })
+
+        // Delete the user from authentication (requires Cloud Function or Admin SDK)
+        // Since we can't use Admin SDK directly in client code, we'll add a special flag
+        // and implement a Cloud Function to handle the actual auth deletion
+        await db.collection("users").doc(userId).update({
+          pendingDeletion: true,
+          deletionRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          deletionRequestedBy: auth.currentUser.uid,
+        })
+
+        // Then delete the user document from Firestore
+        await db.collection("users").doc(userId).delete()
+
+        // Show notification
+        if (window.utils && window.utils.showNotification) {
+          window.utils.showNotification("User verification rejected and account deleted", "success")
+        }
+      }
+
+      // Delete the verification photo from storage
+      if (photoURL && storage) {
+        try {
+          // Extract the path from the URL
+          const storageRef = storage.refFromURL(photoURL)
+          await storageRef.delete()
+          console.log("Verification photo deleted successfully")
+        } catch (deleteError) {
+          console.error("Error deleting verification photo:", deleteError)
+          // Continue anyway, this is not critical
+        }
+      }
+
+      // Reload verification count and dashboard data
+      loadDashboardData()
+
+      // Load verification requests again to refresh the list
+      const filter = document.getElementById("verification-filter")?.value || "pending"
+      loadVerificationRequests(filter)
+
+      // Re-enable buttons
+      if (approveBtn) approveBtn.disabled = false
+      if (rejectBtn) rejectBtn.disabled = false
+    } catch (error) {
+      console.error("Error updating verification status:", error)
+
+      // Re-enable buttons
+      const approveBtn = document.getElementById("approve-verification")
+      const rejectBtn = document.getElementById("reject-verification")
+
+      if (approveBtn) approveBtn.disabled = false
+      if (rejectBtn) rejectBtn.disabled = false
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error updating verification status: " + error.message, "error")
       }
     }
   }
