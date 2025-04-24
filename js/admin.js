@@ -528,6 +528,90 @@ const adminModule = (() => {
         .admin-login-footer a:hover {
           text-decoration: underline;
         }
+
+        /* New Daily Stats Card */
+        .daily-stats-card {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          margin-bottom: 20px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .daily-stats-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .daily-stats-header h3 {
+          margin: 0;
+          color: #333;
+          font-size: 18px;
+        }
+
+        .daily-stats-date {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .daily-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 15px;
+        }
+
+        .daily-stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 15px;
+          background-color: #f9f9f9;
+          border-radius: 8px;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .daily-stat-item:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .daily-stat-value {
+          font-size: 24px;
+          font-weight: 600;
+          color: #ff4b7d;
+          margin-bottom: 5px;
+        }
+
+        .daily-stat-label {
+          font-size: 14px;
+          color: #666;
+          text-align: center;
+        }
+
+        .daily-stat-trend {
+          display: flex;
+          align-items: center;
+          margin-top: 5px;
+          font-size: 12px;
+        }
+
+        .daily-stat-trend.up {
+          color: #4CAF50;
+        }
+
+        .daily-stat-trend.down {
+          color: #F44336;
+        }
+
+        .daily-stat-trend i {
+          margin-right: 3px;
+        }
       `
       document.head.appendChild(style)
     }
@@ -1070,6 +1154,55 @@ const adminModule = (() => {
         throw new Error("User not authenticated")
       }
 
+      // Get today's date at midnight
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      // Get yesterday's date at midnight
+      const yesterday = new Date(today)
+      yesterday.setDate(yesterday.getDate() - 1)
+
+      // Add daily stats card to dashboard if it doesn't exist
+      const dashboardSection = document.getElementById("dashboard-section")
+      const statsContainer = document.getElementById("stats-container")
+
+      if (dashboardSection && !document.getElementById("daily-stats-card")) {
+        const dailyStatsCard = document.createElement("div")
+        dailyStatsCard.id = "daily-stats-card"
+        dailyStatsCard.className = "daily-stats-card"
+        dailyStatsCard.innerHTML = `
+          <div class="daily-stats-header">
+            <h3>Today's Activity</h3>
+            <span class="daily-stats-date">${today.toLocaleDateString()}</span>
+          </div>
+          <div class="daily-stats-grid">
+            <div class="daily-stat-item">
+              <div class="daily-stat-value" id="today-new-users">-</div>
+              <div class="daily-stat-label">New Users</div>
+              <div class="daily-stat-trend" id="users-trend"></div>
+            </div>
+            <div class="daily-stat-item">
+              <div class="daily-stat-value" id="today-matches">-</div>
+              <div class="daily-stat-label">New Matches</div>
+              <div class="daily-stat-trend" id="matches-trend"></div>
+            </div>
+            <div class="daily-stat-item">
+              <div class="daily-stat-value" id="today-messages">-</div>
+              <div class="daily-stat-label">Messages Sent</div>
+              <div class="daily-stat-trend" id="messages-trend"></div>
+            </div>
+            <div class="daily-stat-item">
+              <div class="daily-stat-value" id="today-verifications">-</div>
+              <div class="daily-stat-label">Verification Requests</div>
+              <div class="daily-stat-trend" id="verifications-trend"></div>
+            </div>
+          </div>
+        `
+
+        // Insert before the stats container
+        dashboardSection.insertBefore(dailyStatsCard, statsContainer)
+      }
+
       // Add error handling for each query
       try {
         // Get counts from Firestore
@@ -1117,6 +1250,74 @@ const adminModule = (() => {
         console.error("Error fetching verification data:", error)
         document.getElementById("pending-verification").textContent = "Error"
         document.getElementById("verification-badge").textContent = "!"
+      }
+
+      // Get today's stats
+      try {
+        // New users today
+        const todayUsersSnapshot = await db
+          .collection("users")
+          .where("createdAt", ">=", firebase.firestore.Timestamp.fromDate(today))
+          .get()
+
+        const todayNewUsers = todayUsersSnapshot.size
+
+        // New users yesterday for comparison
+        const yesterdayUsersSnapshot = await db
+          .collection("users")
+          .where("createdAt", ">=", firebase.firestore.Timestamp.fromDate(yesterday))
+          .where("createdAt", "<", firebase.firestore.Timestamp.fromDate(today))
+          .get()
+
+        const yesterdayNewUsers = yesterdayUsersSnapshot.size
+
+        // Update UI
+        document.getElementById("today-new-users").textContent = todayNewUsers
+
+        // Calculate trend
+        const usersTrendEl = document.getElementById("users-trend")
+        if (usersTrendEl) {
+          const diff = todayNewUsers - yesterdayNewUsers
+          if (diff > 0) {
+            usersTrendEl.className = "daily-stat-trend up"
+            usersTrendEl.innerHTML = `<i class="fas fa-arrow-up"></i> ${Math.abs(diff)} from yesterday`
+          } else if (diff < 0) {
+            usersTrendEl.className = "daily-stat-trend down"
+            usersTrendEl.innerHTML = `<i class="fas fa-arrow-down"></i> ${Math.abs(diff)} from yesterday`
+          } else {
+            usersTrendEl.className = "daily-stat-trend"
+            usersTrendEl.innerHTML = `<i class="fas fa-equals"></i> Same as yesterday`
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching today's user data:", error)
+        document.getElementById("today-new-users").textContent = "Error"
+      }
+
+      // Get today's matches
+      try {
+        const todayMatchesSnapshot = await db
+          .collection("matches")
+          .where("createdAt", ">=", firebase.firestore.Timestamp.fromDate(today))
+          .get()
+
+        document.getElementById("today-matches").textContent = todayMatchesSnapshot.size
+      } catch (error) {
+        console.error("Error fetching today's matches data:", error)
+        document.getElementById("today-matches").textContent = "Error"
+      }
+
+      // Get today's verification requests
+      try {
+        const todayVerificationsSnapshot = await db
+          .collection("users")
+          .where("verification.timestamp", ">=", firebase.firestore.Timestamp.fromDate(today))
+          .get()
+
+        document.getElementById("today-verifications").textContent = todayVerificationsSnapshot.size
+      } catch (error) {
+        console.error("Error fetching today's verification data:", error)
+        document.getElementById("today-verifications").textContent = "Error"
       }
 
       // Update last updated time
@@ -1278,6 +1479,17 @@ const adminModule = (() => {
       })
     } catch (error) {
       console.error("Error loading user growth chart:", error)
+
+      // Show error message in chart container
+      const chartContainer = document.getElementById("user-growth-chart").parentNode
+      if (chartContainer) {
+        chartContainer.innerHTML = `
+          <div class="chart-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading chart: ${error.message}</p>
+          </div>
+        `
+      }
     }
   }
 
@@ -2115,6 +2327,8 @@ const adminModule = (() => {
   // Load analytics data
   const loadAnalyticsData = (timeRange) => {
     try {
+      showLoadingOverlay()
+
       // In a real app, this would fetch data from a monitoring service
       // For this demo, we'll generate random data
 
@@ -2129,11 +2343,15 @@ const adminModule = (() => {
       renderEndpointPerformanceChart()
       renderErrorDistributionChart()
       renderUserActivityChart(timeRange)
+
+      // Hide loading overlay when all charts are rendered
+      hideLoadingOverlay()
     } catch (error) {
       console.error("Error loading analytics data:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading analytics data", "error")
+        window.utils.showNotification("Error loading analytics data: " + error.message, "error")
       }
     }
   }
@@ -2145,6 +2363,7 @@ const adminModule = (() => {
       responseTime: [],
       apiCalls: [],
       errorRate: [],
+      labels: [],
     }
 
     // Generate data based on time range
