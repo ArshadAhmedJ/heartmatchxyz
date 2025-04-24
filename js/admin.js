@@ -2276,9 +2276,9 @@ const adminModule = (() => {
 
       // Show error state
       document.getElementById("matches-loading").innerHTML = `
-        <i class="fas fa-exclamation-circle"></i>
-        <p>Error loading matches: ${error.message}</p>
-      `
+      <i class="fas fa-exclamation-circle"></i>
+      <p>Error loading matches: ${error.message}</p>
+    `
 
       hideLoadingOverlay()
 
@@ -2287,6 +2287,9 @@ const adminModule = (() => {
       }
     }
   }
+
+  // Make sure the renderMatches function is properly implemented
+  // Around line 1100-1200 in the file, replace or update the renderMatches function:
 
   // Render matches
   const renderMatches = (matchesData) => {
@@ -2319,40 +2322,40 @@ const adminModule = (() => {
 
       // Create match card HTML
       matchCard.innerHTML = `
-        <div class="match-header">
-          <div class="match-id">ID: ${match.id}</div>
-          <div class="match-timestamp">${timestamp}</div>
+      <div class="match-header">
+        <div class="match-id">ID: ${match.id}</div>
+        <div class="match-timestamp">${timestamp}</div>
+      </div>
+      <div class="match-users">
+        <div class="match-user">
+          <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          <div class="match-user-name">${match.user1.name}</div>
+          <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
         </div>
-        <div class="match-users">
-          <div class="match-user">
-            <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
-            <div class="match-user-name">${match.user1.name}</div>
-            <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
-          </div>
-          <div class="match-user">
-            <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
-            <div class="match-user-name">${match.user2.name}</div>
-            <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
-          </div>
+        <div class="match-user">
+          <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          <div class="match-user-name">${match.user2.name}</div>
+          <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
         </div>
-        <div class="match-messages">
-          <div class="match-messages-header">
-            <div class="match-messages-title">Messages</div>
-            <div class="match-messages-count">${match.messageCount}</div>
-          </div>
-          <div class="match-messages-preview">
-            ${match.messageCount > 0 ? `${match.messageCount} messages exchanged` : "No messages yet"}
-          </div>
+      </div>
+      <div class="match-messages">
+        <div class="match-messages-header">
+          <div class="match-messages-title">Messages</div>
+          <div class="match-messages-count">${match.messageCount}</div>
         </div>
-        <div class="match-actions">
-          <button class="match-action-btn view" data-id="${match.id}" data-user1="${match.user1.id}" data-user2="${match.user2.id}">
-            <i class="fas fa-eye"></i> View Details
-          </button>
-          <button class="match-action-btn delete" data-id="${match.id}">
-            <i class="fas fa-trash"></i> Delete Match
-          </button>
+        <div class="match-messages-preview">
+          ${match.messageCount > 0 ? `${match.messageCount} messages exchanged` : "No messages yet"}
         </div>
-      `
+      </div>
+      <div class="match-actions">
+        <button class="match-action-btn view" data-id="${match.id}" data-user1="${match.user1.id}" data-user2="${match.user2.id}">
+          <i class="fas fa-eye"></i> View Details
+        </button>
+        <button class="match-action-btn delete" data-id="${match.id}">
+          <i class="fas fa-trash"></i> Delete Match
+        </button>
+      </div>
+    `
 
       // Add event listeners to buttons
       const viewBtn = matchCard.querySelector(".match-action-btn.view")
@@ -2379,30 +2382,86 @@ const adminModule = (() => {
     })
   }
 
-  // Delete match
-  const deleteMatch = async (matchId) => {
-    try {
-      showLoadingOverlay()
+  // Make sure the showSection function properly handles the matches section
+  // Find the showSection function (around line 500-600) and ensure it has this code:
 
-      // Delete match document
-      await db.collection("matches").doc(matchId).delete()
+  // Show section
+  const showSection = (section) => {
+    // Update current section
+    currentSection = section
 
-      // Show success notification
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Match deleted successfully", "success")
+    // Show loading overlay
+    showLoadingOverlay()
+
+    // Update active nav item
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      if (item.getAttribute("data-section") === section) {
+        item.classList.add("active")
+      } else {
+        item.classList.remove("active")
       }
+    })
 
-      // Reload matches
-      loadMatches()
-    } catch (error) {
-      console.error("Error deleting match:", error)
-      hideLoadingOverlay()
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error deleting match: " + error.message, "error")
+    // Show/hide sections
+    document.querySelectorAll(".content-section").forEach((sectionEl) => {
+      if (sectionEl.id === `${section}-section`) {
+        sectionEl.classList.remove("hidden")
+      } else {
+        sectionEl.classList.add("hidden")
       }
+    })
+
+    // Load section data
+    switch (section) {
+      case "dashboard":
+        loadDashboardData()
+        break
+      case "verification":
+        loadVerificationRequests("pending")
+        break
+      case "users":
+        loadUsers()
+        break
+      case "matches":
+        loadMatches()
+        break
+      case "analytics":
+        loadAnalyticsData("day")
+        break
+      case "settings":
+        loadSettings()
+        break
     }
   }
+
+  // Make sure the bindEvents function properly binds events for the matches section
+  // Find the bindEvents function (around line 300-400) and ensure it has this code:
+
+  // Add these event listeners to the bindEvents function
+  // Match search
+  const matchSearchBtn = document.getElementById("match-search-btn")
+  if (matchSearchBtn) {
+    matchSearchBtn.addEventListener("click", searchMatches)
+  }
+
+  // Match search input (enter key)
+  const matchSearch = document.getElementById("match-search")
+  if (matchSearch) {
+    matchSearch.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        searchMatches()
+      }
+    })
+  }
+
+  // Refresh matches
+  const refreshMatches = document.getElementById("refresh-matches")
+  if (refreshMatches) {
+    refreshMatches.addEventListener("click", loadMatches)
+  }
+
+  // Make sure the searchMatches function is properly implemented
+  // Add or update the searchMatches function:
 
   // Search matches
   const searchMatches = () => {
@@ -2434,11 +2493,39 @@ const adminModule = (() => {
       if (!hasVisibleCards && searchTerm !== "") {
         emptyState.style.display = "flex"
         emptyState.innerHTML = `
-          <i class="fas fa-search"></i>
-          <p>No matches found for "${searchTerm}"</p>
-        `
+        <i class="fas fa-search"></i>
+        <p>No matches found for "${searchTerm}"</p>
+      `
       } else {
         emptyState.style.display = "none"
+      }
+    }
+  }
+
+  // Make sure the deleteMatch function is properly implemented
+  // Add or update the deleteMatch function:
+
+  // Delete match
+  const deleteMatch = async (matchId) => {
+    try {
+      showLoadingOverlay()
+
+      // Delete match document
+      await db.collection("matches").doc(matchId).delete()
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Match deleted successfully", "success")
+      }
+
+      // Reload matches
+      loadMatches()
+    } catch (error) {
+      console.error("Error deleting match:", error)
+      hideLoadingOverlay()
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error deleting match: " + error.message, "error")
       }
     }
   }
