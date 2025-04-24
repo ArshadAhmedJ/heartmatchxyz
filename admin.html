@@ -26,7 +26,30 @@
   <link rel="stylesheet" href="css/admin.css" />
 </head>
 <body>
-  <div id="admin-page" class="admin-container">
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Loading admin panel...</p>
+  </div>
+
+  <!-- Login container (initially hidden) -->
+  <div id="admin-login-container" class="admin-login-container hidden">
+    <div class="admin-login-card">
+      <div class="admin-login-header">
+        <img src="images/BLK7-logo.png" alt="HeartMatch Logo" class="admin-login-logo">
+        <h2>Admin Login</h2>
+      </div>
+      <div class="admin-login-body">
+        <p class="admin-login-message">Please log in with your admin credentials to access the dashboard.</p>
+        <button id="admin-login-btn" class="btn primary-btn">
+          <i class="fas fa-sign-in-alt"></i> Login with Firebase
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin panel (initially hidden) -->
+  <div id="admin-page" class="admin-container hidden">
     <!-- Admin Header -->
     <header class="admin-header">
       <div class="admin-logo">
@@ -416,6 +439,18 @@
           </div>
         </section>
       </main>
+    </div>
+  </div>
+
+  <!-- Access Denied Container -->
+  <div id="access-denied-container" class="access-denied-container hidden">
+    <div class="access-denied-card">
+      <div class="access-denied-icon">
+        <i class="fas fa-lock"></i>
+      </div>
+      <h2>Access Denied</h2>
+      <p>You don't have permission to access the admin panel.</p>
+      <button id="back-to-app-btn" class="btn primary-btn">Back to App</button>
     </div>
   </div>
 

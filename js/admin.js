@@ -22,6 +22,14 @@ const adminModule = (() => {
   const init = () => {
     console.log("Initializing admin module")
 
+    // Show loading overlay
+    showLoadingOverlay()
+
+    // Initialize Firebase if not already initialized
+    if (!window.firebase) {
+      initializeFirebase()
+    }
+
     // Get Firebase services
     if (window.firebase) {
       firebase = window.firebase
@@ -29,44 +37,100 @@ const adminModule = (() => {
       db = firebase.firestore()
       storage = firebase.storage ? firebase.storage() : null
       functions = firebase.functions ? firebase.functions() : null
+
+      // Set up auth state listener
+      auth.onAuthStateChanged(handleAuthStateChanged)
     } else {
       console.error("Firebase not initialized in admin module")
+      showError("Firebase initialization failed. Please try again later.")
       return
     }
 
-    // Check if user is admin
-    checkAdminAccess()
+    // Bind back to app button
+    const backToAppBtn = document.getElementById("back-to-app-btn")
+    if (backToAppBtn) {
+      backToAppBtn.addEventListener("click", () => {
+        window.location.href = "dashboard.html"
+      })
+    }
 
-    // Bind events
-    bindEvents()
+    // Bind login button
+    const adminLoginBtn = document.getElementById("admin-login-btn")
+    if (adminLoginBtn) {
+      adminLoginBtn.addEventListener("click", handleAdminLogin)
+    }
 
     console.log("Admin module initialized")
+  }
+
+  // Initialize Firebase
+  const initializeFirebase = () => {
+    // Your Firebase config
+    const firebaseConfig = {
+      // This should be replaced with your actual Firebase config
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID",
+    }
+
+    // Initialize Firebase
+    if (!window.firebase.apps.length) {
+      window.firebase.initializeApp(firebaseConfig)
+    }
+  }
+
+  // Handle auth state changes
+  const handleAuthStateChanged = (user) => {
+    console.log("Auth state changed:", user ? "User logged in" : "User logged out")
+
+    if (user) {
+      // User is signed in
+      currentUser = user
+      checkAdminAccess()
+    } else {
+      // User is signed out
+      currentUser = null
+      showLoginScreen()
+    }
+  }
+
+  // Handle admin login
+  const handleAdminLogin = () => {
+    // Show loading overlay
+    showLoadingOverlay()
+
+    // Sign in with redirect
+    const provider = new firebase.auth.GoogleAuthProvider()
+    auth
+      .signInWithPopup(provider)
+      .then((result) => {
+        // This gives you a Google Access Token
+        const credential = result.credential
+        // The signed-in user info
+        const user = result.user
+        console.log("User signed in:", user.displayName)
+      })
+      .catch((error) => {
+        console.error("Error during sign in:", error)
+        showError("Login failed: " + error.message)
+        hideLoadingOverlay()
+        showLoginScreen()
+      })
   }
 
   // Check if user has admin access
   const checkAdminAccess = async () => {
     try {
-      // Get current user
-      currentUser = auth.currentUser
-      if (!currentUser) {
-        // Redirect to login page
-        window.location.href = "auth.html?redirect=admin"
-        return
-      }
-
       // List of admin UIDs - only these users can access the admin panel
       const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
 
       // Check if current user is in the admin list
       if (!adminUIDs.includes(currentUser.uid)) {
-        // Show error and redirect
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification("You don't have admin access.", "error")
-        }
         console.log("Access denied for user:", currentUser.uid)
-        setTimeout(() => {
-          window.location.href = "dashboard.html"
-        }, 2000)
+        showAccessDenied()
         return
       }
 
@@ -87,6 +151,9 @@ const adminModule = (() => {
         if (userDoc.exists && userDoc.data().photoURL) {
           adminPhoto.style.backgroundImage = `url(${userDoc.data().photoURL})`
           adminPhoto.textContent = ""
+        } else if (currentUser.photoURL) {
+          adminPhoto.style.backgroundImage = `url(${currentUser.photoURL})`
+          adminPhoto.textContent = ""
         } else {
           // Set initials
           const name = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
@@ -94,12 +161,79 @@ const adminModule = (() => {
         }
       }
 
+      // Show admin panel
+      showAdminPanel()
+
+      // Bind events
+      bindEvents()
+
       // Load dashboard data
       loadDashboardData()
     } catch (error) {
       console.error("Error checking admin access:", error)
-      // Redirect to login page
-      window.location.href = "auth.html?redirect=admin"
+      showError("Error checking admin access: " + error.message)
+      showLoginScreen()
+    }
+  }
+
+  // Show loading overlay
+  const showLoadingOverlay = () => {
+    const loadingOverlay = document.getElementById("loading-overlay")
+    if (loadingOverlay) {
+      loadingOverlay.classList.remove("hidden")
+    }
+  }
+
+  // Hide loading overlay
+  const hideLoadingOverlay = () => {
+    const loadingOverlay = document.getElementById("loading-overlay")
+    if (loadingOverlay) {
+      loadingOverlay.classList.add("hidden")
+    }
+  }
+
+  // Show login screen
+  const showLoginScreen = () => {
+    hideLoadingOverlay()
+
+    // Hide admin panel and access denied
+    document.getElementById("admin-page").classList.add("hidden")
+    document.getElementById("access-denied-container").classList.add("hidden")
+
+    // Show login container
+    document.getElementById("admin-login-container").classList.remove("hidden")
+  }
+
+  // Show access denied
+  const showAccessDenied = () => {
+    hideLoadingOverlay()
+
+    // Hide admin panel and login
+    document.getElementById("admin-page").classList.add("hidden")
+    document.getElementById("admin-login-container").classList.add("hidden")
+
+    // Show access denied container
+    document.getElementById("access-denied-container").classList.remove("hidden")
+  }
+
+  // Show admin panel
+  const showAdminPanel = () => {
+    hideLoadingOverlay()
+
+    // Hide login and access denied
+    document.getElementById("admin-login-container").classList.add("hidden")
+    document.getElementById("access-denied-container").classList.add("hidden")
+
+    // Show admin panel
+    document.getElementById("admin-page").classList.remove("hidden")
+  }
+
+  // Show error notification
+  const showError = (message) => {
+    if (window.utils && window.utils.showNotification) {
+      window.utils.showNotification(message, "error")
+    } else {
+      alert(message)
     }
   }
 
@@ -117,9 +251,15 @@ const adminModule = (() => {
     const logoutBtn = document.getElementById("admin-logout-btn")
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
-        auth.signOut().then(() => {
-          window.location.href = "index.html"
-        })
+        auth
+          .signOut()
+          .then(() => {
+            window.location.href = "index.html"
+          })
+          .catch((error) => {
+            console.error("Error signing out:", error)
+            showError("Logout failed: " + error.message)
+          })
       })
     }
 
@@ -194,15 +334,15 @@ const adminModule = (() => {
     }
 
     // Save verification settings
-    const saveVerificationSettings = document.getElementById("save-verification-settings")
-    if (saveVerificationSettings) {
-      saveVerificationSettings.addEventListener("click", saveVerificationSettings)
+    const saveVerificationSettingsBtn = document.getElementById("save-verification-settings")
+    if (saveVerificationSettingsBtn) {
+      saveVerificationSettingsBtn.addEventListener("click", saveVerificationSettings)
     }
 
     // Save system settings
-    const saveSystemSettings = document.getElementById("save-system-settings")
-    if (saveSystemSettings) {
-      saveSystemSettings.addEventListener("click", saveSystemSettings)
+    const saveSystemSettingsBtn = document.getElementById("save-system-settings")
+    if (saveSystemSettingsBtn) {
+      saveSystemSettingsBtn.addEventListener("click", saveSystemSettings)
     }
 
     // Add admin
@@ -216,6 +356,9 @@ const adminModule = (() => {
   const showSection = (section) => {
     // Update current section
     currentSection = section
+
+    // Show loading overlay
+    showLoadingOverlay()
 
     // Update active nav item
     document.querySelectorAll(".nav-item").forEach((item) => {
@@ -258,6 +401,8 @@ const adminModule = (() => {
   // Load dashboard data
   const loadDashboardData = async () => {
     try {
+      showLoadingOverlay()
+
       // Show loading state
       document.getElementById("total-users").textContent = "Loading..."
       document.getElementById("active-users").textContent = "Loading..."
@@ -302,14 +447,18 @@ const adminModule = (() => {
         lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString()}`
       }
 
+      hideLoadingOverlay()
+
       // Load charts
       loadUserGrowthChart()
       loadResponseTimeChart()
       loadSystemHealthData()
     } catch (error) {
       console.error("Error loading dashboard data:", error)
+      hideLoadingOverlay()
+
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading dashboard data", "error")
+        window.utils.showNotification("Error loading dashboard data: " + error.message, "error")
       }
     }
   }
@@ -509,6 +658,8 @@ const adminModule = (() => {
   // Load verification requests
   const loadVerificationRequests = async (status = "pending") => {
     try {
+      showLoadingOverlay()
+
       // Show loading state
       const verificationList = document.getElementById("verification-list")
       if (verificationList) {
@@ -568,13 +719,16 @@ const adminModule = (() => {
         return bTime - aTime
       })
 
+      hideLoadingOverlay()
+
       // Render list
       renderVerificationList()
     } catch (error) {
       console.error("Error loading verification requests:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading verification requests", "error")
+        window.utils.showNotification("Error loading verification requests: " + error.message, "error")
       }
 
       // Show error state
@@ -761,6 +915,8 @@ const adminModule = (() => {
   // Load users
   const loadUsers = async () => {
     try {
+      showLoadingOverlay()
+
       // Show loading state
       const usersTableBody = document.getElementById("users-table-body")
       if (usersTableBody) {
@@ -800,13 +956,16 @@ const adminModule = (() => {
         return bTime - aTime
       })
 
+      hideLoadingOverlay()
+
       // Render users
       renderUsersList()
     } catch (error) {
       console.error("Error loading users:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading users", "error")
+        window.utils.showNotification("Error loading users: " + error.message, "error")
       }
 
       // Show error state
@@ -1329,24 +1488,44 @@ const adminModule = (() => {
   // Load settings
   const loadSettings = async () => {
     try {
-      // In a real app, this would load settings from Firestore
-      // For this demo, we'll use default values
+      showLoadingOverlay()
 
-      // Verification settings
-      document.getElementById("auto-approve").checked = false
-      document.getElementById("verification-expiry").value = 90
+      // Load verification settings
+      const verificationSettings = await db.collection("settings").doc("verification").get()
 
-      // System settings
-      document.getElementById("maintenance-mode").checked = false
-      document.getElementById("analytics-retention").value = 30
+      if (verificationSettings.exists) {
+        const data = verificationSettings.data()
+        document.getElementById("auto-approve").checked = data.autoApprove || false
+        document.getElementById("verification-expiry").value = data.expiryDays || 90
+      } else {
+        // Default values
+        document.getElementById("auto-approve").checked = false
+        document.getElementById("verification-expiry").value = 90
+      }
+
+      // Load system settings
+      const systemSettings = await db.collection("settings").doc("system").get()
+
+      if (systemSettings.exists) {
+        const data = systemSettings.data()
+        document.getElementById("maintenance-mode").checked = data.maintenanceMode || false
+        document.getElementById("analytics-retention").value = data.analyticsRetentionDays || 30
+      } else {
+        // Default values
+        document.getElementById("maintenance-mode").checked = false
+        document.getElementById("analytics-retention").value = 30
+      }
 
       // Load admin users
       await loadAdminUsers()
+
+      hideLoadingOverlay()
     } catch (error) {
       console.error("Error loading settings:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading settings", "error")
+        window.utils.showNotification("Error loading settings: " + error.message, "error")
       }
     }
   }
@@ -1396,7 +1575,7 @@ const adminModule = (() => {
       console.error("Error loading admin users:", error)
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading admin users", "error")
+        window.utils.showNotification("Error loading admin users: " + error.message, "error")
       }
     }
   }
@@ -1451,7 +1630,7 @@ const adminModule = (() => {
       console.error("Error adding admin:", error)
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error adding admin", "error")
+        window.utils.showNotification("Error adding admin: " + error.message, "error")
       }
     }
   }
@@ -1487,20 +1666,38 @@ const adminModule = (() => {
   // Save verification settings
   const saveVerificationSettings = async () => {
     try {
+      showLoadingOverlay()
+
       const autoApprove = document.getElementById("auto-approve").checked
       const verificationExpiry = Number.parseInt(document.getElementById("verification-expiry").value)
 
-      // In a real app, this would save to Firestore
-      // For this demo, we'll just show a success message
+      // Validate input
+      if (isNaN(verificationExpiry) || verificationExpiry < 0 || verificationExpiry > 365) {
+        showError("Please enter a valid expiration period (0-365 days)")
+        hideLoadingOverlay()
+        return
+      }
 
+      // Save settings to Firestore
+      await db.collection("settings").doc("verification").set({
+        autoApprove: autoApprove,
+        expiryDays: verificationExpiry,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentUser.uid,
+      })
+
+      hideLoadingOverlay()
+
+      // Show success notification
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Verification settings saved successfully", "success")
       }
     } catch (error) {
       console.error("Error saving verification settings:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error saving verification settings", "error")
+        window.utils.showNotification("Error saving verification settings: " + error.message, "error")
       }
     }
   }
@@ -1508,20 +1705,38 @@ const adminModule = (() => {
   // Save system settings
   const saveSystemSettings = async () => {
     try {
+      showLoadingOverlay()
+
       const maintenanceMode = document.getElementById("maintenance-mode").checked
       const analyticsRetention = Number.parseInt(document.getElementById("analytics-retention").value)
 
-      // In a real app, this would save to Firestore
-      // For this demo, we'll just show a success message
+      // Validate input
+      if (isNaN(analyticsRetention) || analyticsRetention < 1 || analyticsRetention > 365) {
+        showError("Please enter a valid retention period (1-365 days)")
+        hideLoadingOverlay()
+        return
+      }
 
+      // Save settings to Firestore
+      await db.collection("settings").doc("system").set({
+        maintenanceMode: maintenanceMode,
+        analyticsRetentionDays: analyticsRetention,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: currentUser.uid,
+      })
+
+      hideLoadingOverlay()
+
+      // Show success notification
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("System settings saved successfully", "success")
       }
     } catch (error) {
       console.error("Error saving system settings:", error)
+      hideLoadingOverlay()
 
       if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error saving system settings", "error")
+        window.utils.showNotification("Error saving system settings: " + error.message, "error")
       }
     }
   }
