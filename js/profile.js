@@ -197,20 +197,25 @@ const profileModule = (() => {
                 ${photos
                   .map(
                     (photo, index) => `
-                  <div class="profile-photo-card">
-                    <div class="profile-photo-item" style="background-image: url('${photo}')">
-                      ${
-                        isCurrentUser && isEditing
-                          ? `
-                        <button class="photo-delete-btn" data-index="${index}">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      `
-                          : ""
-                      }
-                    </div>
-                  </div>
-                `,
+  <div class="profile-photo-card">
+    <div class="profile-photo-item" style="background-image: url('${photo}')">
+      ${
+        isCurrentUser && isEditing
+          ? `
+        <div class="photo-actions">
+          <button class="photo-edit-btn" data-index="${index}" aria-label="Edit photo">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="photo-delete-btn" data-index="${index}" aria-label="Remove photo">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  </div>
+`,
                   )
                   .join("")}
                 
@@ -418,6 +423,34 @@ const profileModule = (() => {
             }
           })
         })
+
+        // Photo edit buttons
+        const photoEditBtns = profileContent.querySelectorAll(".photo-edit-btn")
+        photoEditBtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const index = Number.parseInt(btn.getAttribute("data-index"))
+            if (userData.photos && index >= 0 && index < userData.photos.length) {
+              // Create a hidden file input for updating the photo
+              const fileInput = document.createElement("input")
+              fileInput.type = "file"
+              fileInput.accept = "image/*"
+              fileInput.style.display = "none"
+              document.body.appendChild(fileInput)
+
+              // Trigger click on the file input
+              fileInput.click()
+
+              // Handle file selection
+              fileInput.addEventListener("change", (e) => {
+                if (e.target.files && e.target.files[0]) {
+                  updatePhoto(e.target.files[0], index, userData)
+                }
+                // Remove the temporary input
+                document.body.removeChild(fileInput)
+              })
+            }
+          })
+        })
       } else {
         // Edit profile button
         const editProfileBtn = profileContent.querySelector("#edit-profile-btn")
@@ -568,6 +601,73 @@ const profileModule = (() => {
     }
   }
 
+  // Update photo
+  const updatePhoto = async (file, index, userData) => {
+    console.log(`Updating photo at index: ${index}`)
+
+    try {
+      const user = auth.currentUser
+      if (!user) {
+        console.error("No user logged in")
+        return
+      }
+
+      // Show loading notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Updating photo...", "info")
+      }
+
+      // Create storage reference
+      const storageRef = storage.ref()
+      const photoRef = storageRef.child(`users/${user.uid}/photos/${Date.now()}_${file.name}`)
+
+      // Upload file
+      const snapshot = await photoRef.put(file)
+
+      // Get download URL
+      const photoURL = await snapshot.ref.getDownloadURL()
+
+      // Update the photo at the specified index
+      if (!userData.photos) {
+        userData.photos = []
+      }
+
+      // Ensure the index exists in the array
+      while (userData.photos.length <= index) {
+        userData.photos.push(null)
+      }
+
+      // Update the photo at the specified index
+      userData.photos[index] = photoURL
+
+      // Save to Firestore
+      await db.collection("users").doc(user.uid).update({
+        photos: userData.photos,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+
+      // Update user profile photo if it's the first photo
+      if (index === 0) {
+        await user.updateProfile({
+          photoURL: photoURL,
+        })
+      }
+
+      // Reload profile
+      renderProfile(userData)
+
+      // Show success notification
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Photo updated successfully!", "success")
+      }
+    } catch (error) {
+      console.error("Error updating photo:", error)
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error updating photo. Please try again.", "error")
+      }
+    }
+  }
+
   // Delete photo
   const deletePhoto = async (index, userData) => {
     console.log("Deleting photo at index:", index)
@@ -621,12 +721,14 @@ const profileModule = (() => {
     init,
     loadProfile,
     viewProfile,
+    updatePhoto,
   }
 
   return {
     init,
     loadProfile,
     viewProfile,
+    updatePhoto,
   }
 })()
 
