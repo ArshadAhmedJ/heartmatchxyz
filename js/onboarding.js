@@ -175,7 +175,7 @@ window.onboardingModule = (() => {
         if (removeBtn) {
           removeBtn.addEventListener("click", (e) => {
             e.stopPropagation() // Prevent triggering the parent click
-            const index = Number.parseInt(removeBtn.getAttribute("data-index"))
+            const index = Number.parseInt(e.currentTarget.getAttribute("data-index"))
             removePhoto(index)
           })
         }
