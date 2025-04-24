@@ -562,7 +562,29 @@ const discoverModule = (() => {
     // We're not using viewProfileBtn anymore
   }
 
-  // Update the showProfile function to display verification badge
+  // Add this function to toggle fullscreen mode
+  const toggleFullscreen = (card) => {
+    if (card) {
+      card.classList.toggle("fullscreen")
+
+      // Update action buttons position
+      const actionButtons = document.querySelector(".action-buttons")
+      if (actionButtons) {
+        if (card.classList.contains("fullscreen")) {
+          // Move action buttons inside the card when in fullscreen
+          card.appendChild(actionButtons)
+        } else {
+          // Move action buttons back to original position
+          const cardContainer = document.getElementById("card-container")
+          if (cardContainer) {
+            cardContainer.appendChild(actionButtons)
+          }
+        }
+      }
+    }
+  }
+
+  // Update the showProfile function to add fullscreen toggle functionality
   const showProfile = (profile) => {
     console.log("Showing profile:", profile.id)
 
@@ -602,22 +624,34 @@ const discoverModule = (() => {
 
     // Create card content
     card.innerHTML = `
-    <div class="close-fullscreen"><i class="fas fa-arrow-left"></i></div>
-      <div class="profile-images">
-        <div class="profile-image-main" style="background-image: url('${mainPhoto}')">
-          <div class="profile-info transparent-bg">
-            <h2>${profile.displayName || profile.name || "Anonymous"}, ${age} ${verificationBadge}</h2>
-            <p>${profile.location || "Nearby"}</p>
-          </div>
+    <div class="profile-images">
+      <div class="profile-image-main" style="background-image: url('${mainPhoto}')">
+        ${
+          profile.photos && profile.photos.length > 1
+            ? `
+            <div class="profile-image-thumbnails">
+              ${profile.photos
+                .slice(1, 4)
+                .map(
+                  (photo, index) => `
+                <div class="profile-image-thumb" style="background-image: url('${photo}')" data-index="${index + 1}"></div>
+              `,
+                )
+                .join("")}
+            </div>
+          `
+            : ""
+        }
+        <div class="profile-details">
+          <p class="profile-bio">${profile.bio || "No bio available"}</p>
           ${
-            profile.photos && profile.photos.length > 1
+            profile.interests && profile.interests.length > 0
               ? `
-              <div class="profile-image-thumbnails">
-                ${profile.photos
-                  .slice(1, 4)
+              <div class="profile-interests">
+                ${profile.interests
                   .map(
-                    (photo, index) => `
-                  <div class="profile-image-thumb" style="background-image: url('${photo}')" data-index="${index + 1}"></div>
+                    (interest) => `
+                  <span class="interest-tag">${interest}</span>
                 `,
                   )
                   .join("")}
@@ -626,47 +660,23 @@ const discoverModule = (() => {
               : ""
           }
         </div>
+        <div class="profile-info">
+          <h2>${profile.displayName || profile.name || "Anonymous"}, ${age} ${verificationBadge}</h2>
+          <p>${profile.location || "Nearby"}</p>
+        </div>
       </div>
-      <div class="profile-details">
-        <p class="profile-bio">${profile.bio || "No bio available"}</p>
-        ${
-          profile.interests && profile.interests.length > 0
-            ? `
-            <div class="profile-interests">
-              ${profile.interests
-                .map(
-                  (interest) => `
-                <span class="interest-tag">${interest}</span>
-              `,
-                )
-                .join("")}
-            </div>
-          `
-            : ""
-        }
-      </div>
-    `
+    </div>
+  `
 
     // Clear container and add new card
     cardContainer.innerHTML = ""
     cardContainer.appendChild(card)
 
-    // Add event listener to close button
-    const closeBtn = card.querySelector(".close-fullscreen")
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        // Go back to dashboard
-        if (window.dashboardModule && typeof window.dashboardModule.showSection === "function") {
-          window.dashboardModule.showSection("discover")
-          loadProfiles()
-        }
-      })
-    }
-
     // Add event listeners to thumbnails
     const thumbnails = card.querySelectorAll(".profile-image-thumb")
     thumbnails.forEach((thumb) => {
-      thumb.addEventListener("click", () => {
+      thumb.addEventListener("click", (e) => {
+        e.stopPropagation() // Prevent other click events
         const index = Number.parseInt(thumb.getAttribute("data-index"))
         if (profile.photos && profile.photos[index]) {
           const mainImage = card.querySelector(".profile-image-main")
@@ -696,7 +706,6 @@ const discoverModule = (() => {
     // Check if user has roses and enable/disable rose button
     checkDailyRose()
 
-    // Add this to the createProfileCard function in discover.js
     // Inside the createProfileCard function, before returning the card element
     if (window.verificationModule) {
       // Check if user is verified and add badge

@@ -87,25 +87,27 @@
   align-items: center;
   justify-content: center;
   background-color: white;
-  opacity: 0.5;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   padding: 0;
-  transition: opacity 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 #rose-btn:hover {
-  opacity: 0.8;
+  transform: scale(1.05);
 }
 
 #rose-btn:disabled {
-  opacity: 0.3;
+  opacity: 0.5;
+  transform: none;
 }
 
 #rose-btn:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(240, 101, 149, 0.5);
 }
 
 /* Empty state styling */
@@ -200,81 +202,6 @@
   line-height: 1.2;
 }
 
-@media (max-width: 480px) {
-  .empty-state {
-    padding: 1rem;
-  }
-
-  .empty-state-image {
-    max-width: 150px;
-  }
-
-  .developer-profiles {
-    gap: 0.75rem;
-  }
-
-  .developer-card {
-    width: 45%;
-    max-width: none;
-  }
-
-  .developer-image {
-    height: 140px;
-  }
-
-  .developer-info h3 {
-    font-size: 0.9rem;
-  }
-
-  .developer-info p {
-    font-size: 0.75rem;
-  }
-
-  /* Fix action buttons on mobile */
-  .action-buttons {
-    gap: 0.5rem;
-  }
-
-  #like-btn,
-  #dislike-btn,
-  #rose-btn {
-    width: 45px;
-    height: 45px;
-  }
-
-  .rose-icon {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-/* Fix for very small screens */
-@media (max-width: 360px) {
-  .developer-card {
-    width: 100%;
-    max-width: 200px;
-  }
-
-  .developer-image {
-    height: 160px;
-  }
-}
-
-/* Make sure action buttons are properly styled when hidden/shown */
-#like-btn,
-#dislike-btn,
-#rose-btn,
-#view-profile-btn {
-  transition: opacity 0.3s ease, display 0.3s ease;
-}
-
-/* Ensure empty state container is properly sized on mobile */
-.empty-state {
-  min-height: 300px;
-  box-sizing: border-box;
-  width: 100%;
-}
-
 /* Verification Badge in Profile Cards */
 .profile-info h2 .verification-badge {
   display: inline-flex;
@@ -289,75 +216,119 @@
   font-size: 0.8em;
 }
 
-/* Transparent background for profile info */
-.profile-info.transparent-bg {
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0) 100%);
-  border-radius: 0 0 8px 8px;
-  padding: 15px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+/* SIMPLIFIED PROFILE CARD STYLING */
+#card-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.profile-info.transparent-bg h2 {
-  color: white;
-  margin-bottom: 5px;
-}
-
-.profile-info.transparent-bg p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-}
-
-/* Update the profile card to be full screen */
 .profile-card {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  z-index: 100;
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  height: 550px;
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: white;
 }
 
-/* Update the profile images container */
 .profile-images {
-  height: 100%;
+  position: relative;
   width: 100%;
+  height: 100%;
 }
 
-/* Update the main profile image */
 .profile-image-main {
-  height: 100%;
   width: 100%;
-  border-radius: 0;
+  height: 100%;
   background-size: cover;
   background-position: center;
 }
 
-/* Adjust the profile info position */
-.profile-info.transparent-bg {
+.profile-info {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0) 100%);
-  border-radius: 0;
   padding: 20px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0) 100%);
 }
 
-/* Make profile info text larger */
 .profile-info h2 {
-  font-size: 2rem;
-  margin-bottom: 10px;
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 5px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 .profile-info p {
-  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-/* Adjust the action buttons position */
+.profile-image-thumbnails {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-image-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.profile-image-thumb:hover {
+  transform: scale(1.1);
+}
+
+.profile-details {
+  position: absolute;
+  bottom: 100px;
+  left: 0;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.profile-bio {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.profile-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.interest-tag {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(5px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Action buttons */
 .action-buttons {
   position: fixed;
   bottom: 30px;
@@ -366,119 +337,176 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  z-index: 101;
+  z-index: 5;
 }
 
-/* Make action buttons larger */
 #like-btn,
-#dislike-btn,
-#rose-btn {
-  width: 70px;
-  height: 70px;
-  background-color: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Adjust the thumbnails position */
-.profile-image-thumbnails {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.profile-image-thumb {
+#dislike-btn {
   width: 60px;
   height: 60px;
-  border-radius: 8px;
-  border: 2px solid white;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-/* Add a close button to exit full screen view */
-.close-fullscreen {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 40px;
-  height: 40px;
-  background-color: rgba(0, 0, 0, 0.5);
   border-radius: 50%;
+  border: none;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  z-index: 102;
+  transition: transform 0.2s ease;
 }
 
-/* Adjust profile details */
-.profile-details {
-  position: absolute;
-  bottom: 120px;
+#like-btn:hover,
+#dislike-btn:hover {
+  transform: scale(1.05);
+}
+
+#like-btn {
+  color: #4caf50;
+}
+
+#dislike-btn {
+  color: #f44336;
+}
+
+/* Animation classes */
+.like-indicator {
+  animation: swipeRight 0.5s forwards;
+}
+
+.dislike-indicator {
+  animation: swipeLeft 0.5s forwards;
+}
+
+@keyframes swipeRight {
+  to {
+    transform: translateX(150%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes swipeLeft {
+  to {
+    transform: translateX(-150%) rotate(-20deg);
+    opacity: 0;
+  }
+}
+
+/* Loading state */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  padding: 20px;
+  text-align: center;
+}
+
+.loading-spinner {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #f06595;
+}
+
+/* Match popup */
+.match-popup {
+  position: fixed;
+  top: 0;
   left: 0;
   width: 100%;
-  padding: 0 20px;
-  z-index: 101;
-}
-
-.profile-bio {
-  color: white;
-  font-size: 1.1rem;
-  margin-bottom: 15px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-.profile-interests {
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.interest-tag {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  backdrop-filter: blur(5px);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+.match-popup-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 90%;
+  width: 400px;
+  text-align: center;
 }
 
-/* Adjust for mobile */
+.match-header h2 {
+  color: #f06595;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.match-images {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.match-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.match-heart {
+  margin: 0 15px;
+  color: #f06595;
+  font-size: 2rem;
+  animation: pulse 1.5s infinite;
+}
+
+.match-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.confetti {
+  position: fixed;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  background-color: #f06595;
+  animation: fall linear forwards;
+  z-index: 999;
+}
+
+@keyframes fall {
+  to {
+    transform: translateY(100vh) rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
+  .profile-card {
+    height: 500px;
+    max-width: 350px;
+  }
+
   .profile-info h2 {
     font-size: 1.5rem;
   }
 
   .profile-info p {
-    font-size: 1rem;
-  }
-
-  #like-btn,
-  #dislike-btn,
-  #rose-btn {
-    width: 60px;
-    height: 60px;
-  }
-
-  .profile-image-thumb {
-    width: 50px;
-    height: 50px;
+    font-size: 0.9rem;
   }
 
   .profile-bio {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
-}
 
-/* Adjust for very small screens */
-@media (max-width: 480px) {
-  .profile-info h2 {
-    font-size: 1.3rem;
+  .action-buttons {
+    bottom: 20px;
+    gap: 15px;
   }
 
   #like-btn,
@@ -486,5 +514,80 @@
   #rose-btn {
     width: 55px;
     height: 55px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-card {
+    height: 450px;
+    max-width: 300px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.3rem;
+  }
+
+  .profile-info p {
+    font-size: 0.8rem;
+  }
+
+  .profile-bio {
+    font-size: 0.8rem;
+  }
+
+  .action-buttons {
+    bottom: 15px;
+    gap: 12px;
+  }
+
+  #like-btn,
+  #dislike-btn,
+  #rose-btn {
+    width: 50px;
+    height: 50px;
+  }
+
+  .profile-image-thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  .interest-tag {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+
+  .empty-state-image {
+    max-width: 150px;
+  }
+
+  .developer-card {
+    width: 45%;
+  }
+
+  .developer-image {
+    height: 140px;
+  }
+}
+
+@media (max-width: 360px) {
+  .profile-card {
+    height: 400px;
+    max-width: 280px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.2rem;
+  }
+
+  .action-buttons {
+    gap: 10px;
+  }
+
+  #like-btn,
+  #dislike-btn,
+  #rose-btn {
+    width: 45px;
+    height: 45px;
   }
 }
