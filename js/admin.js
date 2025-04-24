@@ -1,12 +1,25 @@
-// Admin Dashboard Module
+import { Chart } from "@/components/ui/chart"
+// Admin Panel Module
 const adminModule = (() => {
   // Firebase services
-  let firebase, auth, db, storage, functions
+  let firebase, auth, db, storage
+  let unsubscribeVerificationListener = null
+
+  // Admin UIDs - hardcoded for security
+  const ADMIN_UIDS = ["lXnIV6QfuCWJOPJfVxJ9xqvUg2J3", "TgxwPG9e8NZZXMlMtNpOlmhDwLA2"]
+
+  // DOM elements
+  let verificationContainer
+  let statisticsContainer
+  let adminActionsContainer
+  let loginContainer
+  let loadingOverlay
+  let mainAdminPanel
 
   // State
-  let currentUser = null
+  const currentUser = null
   let currentSection = "dashboard"
-  let verificationRequests = []
+  const verificationRequests = []
   let selectedVerification = null
   let usersList = []
   let currentPage = 1
@@ -26,45 +39,43 @@ const adminModule = (() => {
   const init = () => {
     console.log("Initializing admin module")
 
-    // Show loading overlay
-    showLoadingOverlay()
-
-    // Initialize Firebase if not already initialized
-    initializeFirebase()
-
     // Get Firebase services
     if (window.firebase) {
       firebase = window.firebase
       auth = firebase.auth()
       db = firebase.firestore()
       storage = firebase.storage ? firebase.storage() : null
-      functions = firebase.functions ? firebase.functions() : null
-
-      // Set up auth state listener
-      auth.onAuthStateChanged(handleAuthStateChanged)
-
-      // Set a timeout to check if we're stuck loading
-      setTimeout(checkIfStuckLoading, 10000)
     } else {
       console.error("Firebase not initialized in admin module")
-      showError("Firebase initialization failed. Please try again later.")
-      hideLoadingOverlay()
       return
     }
 
-    // Bind back to app button
-    const backToAppBtn = document.getElementById("back-to-app-btn")
-    if (backToAppBtn) {
-      backToAppBtn.addEventListener("click", () => {
-        window.location.href = "dashboard.html"
-      })
+    // Get DOM elements
+    verificationContainer = document.getElementById("verification-requests")
+    statisticsContainer = document.getElementById("statistics-container")
+    adminActionsContainer = document.getElementById("admin-actions")
+    loginContainer = document.getElementById("admin-login-container")
+    mainAdminPanel = document.getElementById("admin-page")
+    loadingOverlay = document.getElementById("loading-overlay")
+
+    // Show loading overlay initially
+    if (loadingOverlay) {
+      loadingOverlay.style.display = "flex"
     }
 
-    // Bind login button
-    const adminLoginBtn = document.getElementById("admin-login-btn")
-    if (adminLoginBtn) {
-      adminLoginBtn.addEventListener("click", handleAdminLogin)
-    }
+    // Set loading timeout to check if we're stuck
+    setTimeout(() => {
+      if (loadingOverlay && loadingOverlay.style.display === "flex") {
+        console.log("Loading timeout exceeded, forcing login screen")
+        showLoginForm()
+      }
+    }, 5000)
+
+    // Listen for auth state changes
+    auth.onAuthStateChanged(handleAuthChange)
+
+    // Bind events
+    bindEvents()
 
     console.log("Admin module initialized")
   }
@@ -111,20 +122,13 @@ const adminModule = (() => {
   }
 
   // Handle auth state changes
-  const handleAuthStateChanged = (user) => {
-    console.log("Auth state changed:", user ? "User logged in" : "User logged out")
-
-    // Clean up any existing listeners
-    cleanupListeners()
-
+  const handleAuthChange = (user) => {
     if (user) {
       // User is signed in
-      currentUser = user
-      checkAdminAccess()
+      checkAdminAccess(user)
     } else {
       // User is signed out
-      currentUser = null
-      showLoginScreen()
+      showLoginForm()
     }
   }
 
@@ -171,62 +175,44 @@ const adminModule = (() => {
   }
 
   // Check if user has admin access
-  const checkAdminAccess = async () => {
+  const checkAdminAccess = async (user) => {
     try {
-      // List of admin UIDs - only these users can access the admin panel
-      const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
-
-      // Check if current user is in the admin list
-      if (!adminUIDs.includes(currentUser.uid)) {
-        console.log("Access denied for user:", currentUser.uid)
-        showAccessDenied()
-        return
+      // Check if user ID is in the admin list
+      if (ADMIN_UIDS.includes(user.uid)) {
+        // User has admin access
+        showAdminPanel()
+      } else {
+        // User does not have admin access
+        alert("You do not have admin access.")
+        auth.signOut()
+        showLoginForm()
       }
-
-      console.log("Admin access granted for user:", currentUser.uid)
-
-      // Get user data to display admin name and photo
-      try {
-        const userDoc = await db.collection("users").doc(currentUser.uid).get()
-
-        // Set admin name and photo
-        const adminName = document.getElementById("admin-name")
-        const adminPhoto = document.getElementById("admin-photo")
-
-        if (adminName) {
-          adminName.textContent = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
-        }
-
-        if (adminPhoto) {
-          if (userDoc.exists && userDoc.data().photoURL) {
-            adminPhoto.style.backgroundImage = `url(${userDoc.data().photoURL})`
-            adminPhoto.textContent = ""
-          } else if (currentUser.photoURL) {
-            adminPhoto.style.backgroundImage = `url(${currentUser.photoURL})`
-            adminPhoto.textContent = ""
-          } else {
-            // Set initials
-            const name = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
-            adminPhoto.textContent = name.charAt(0).toUpperCase()
-          }
-        }
-      } catch (error) {
-        console.error("Error getting user data:", error)
-        // Continue anyway, this is not critical
-      }
-
-      // Show admin panel
-      showAdminPanel()
-
-      // Bind events
-      bindEvents()
-
-      // Load dashboard data
-      loadDashboardData()
     } catch (error) {
       console.error("Error checking admin access:", error)
-      showError("Error checking admin access: " + error.message)
-      showLoginScreen()
+      alert("Error checking admin access. Please try again.")
+      showLoginForm()
+    }
+  }
+
+  // Show login form
+  const showLoginForm = () => {
+    if (loginContainer && mainAdminPanel && loadingOverlay) {
+      loginContainer.style.display = "block"
+      mainAdminPanel.style.display = "none"
+      loadingOverlay.style.display = "none"
+    }
+  }
+
+  // Show admin panel
+  const showAdminPanel = () => {
+    if (loginContainer && mainAdminPanel && loadingOverlay) {
+      loginContainer.style.display = "none"
+      mainAdminPanel.style.display = "block"
+      loadingOverlay.style.display = "none"
+
+      // Load admin data
+      loadVerificationRequests()
+      loadStatistics()
     }
   }
 
@@ -274,20 +260,6 @@ const adminModule = (() => {
     if (accessDenied) accessDenied.classList.remove("hidden")
   }
 
-  // Show admin panel
-  const showAdminPanel = () => {
-    hideLoadingOverlay()
-
-    // Hide login and access denied
-    const loginContainer = document.getElementById("admin-login-container")
-    const accessDenied = document.getElementById("access-denied-container")
-    const adminPage = document.getElementById("admin-page")
-
-    if (loginContainer) loginContainer.classList.add("hidden")
-    if (accessDenied) accessDenied.classList.add("hidden")
-    if (adminPage) adminPage.classList.remove("hidden")
-  }
-
   // Show error notification
   const showError = (message) => {
     if (window.utils && window.utils.showNotification) {
@@ -299,6 +271,34 @@ const adminModule = (() => {
 
   // Bind events
   const bindEvents = () => {
+    // Login form
+    const loginForm = document.getElementById("admin-login-form")
+    if (loginForm) {
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault()
+        const email = document.getElementById("admin-email").value
+        const password = document.getElementById("admin-password").value
+        adminLogin(email, password)
+      })
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById("admin-logout-btn")
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", adminLogout)
+    }
+
+    // Refresh buttons
+    const refreshVerificationBtn = document.getElementById("refresh-verification-btn")
+    if (refreshVerificationBtn) {
+      refreshVerificationBtn.addEventListener("click", loadVerificationRequests)
+    }
+
+    const refreshStatsBtn = document.getElementById("refresh-stats-btn")
+    if (refreshStatsBtn) {
+      refreshStatsBtn.addEventListener("click", loadStatistics)
+    }
+
     // Navigation
     document.querySelectorAll(".nav-item").forEach((item) => {
       item.addEventListener("click", () => {
@@ -306,22 +306,6 @@ const adminModule = (() => {
         showSection(section)
       })
     })
-
-    // Logout button
-    const logoutBtn = document.getElementById("admin-logout-btn")
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        auth
-          .signOut()
-          .then(() => {
-            window.location.href = "index.html"
-          })
-          .catch((error) => {
-            console.error("Error signing out:", error)
-            showError("Logout failed: " + error.message)
-          })
-      })
-    }
 
     // Dashboard refresh button
     const refreshDashboard = document.getElementById("refresh-dashboard")
@@ -333,7 +317,7 @@ const adminModule = (() => {
     const verificationFilter = document.getElementById("verification-filter")
     if (verificationFilter) {
       verificationFilter.addEventListener("change", () => {
-        loadVerificationRequests(verificationFilter.value)
+        loadVerificationRequests("pending")
       })
     }
 
@@ -342,7 +326,7 @@ const adminModule = (() => {
     if (refreshVerification) {
       refreshVerification.addEventListener("click", () => {
         const filter = document.getElementById("verification-filter").value
-        loadVerificationRequests(filter)
+        loadVerificationRequests("pending")
       })
     }
 
@@ -753,115 +737,160 @@ const adminModule = (() => {
   }
 
   // Load verification requests
-  const loadVerificationRequests = async (status = "pending") => {
+  const loadVerificationRequests = () => {
+    if (!verificationContainer) return
+
+    // Clear existing content
+    verificationContainer.innerHTML = "<h3>Verification Requests</h3>"
+
+    // Create loading indicator
+    const loadingSpinner = document.createElement("div")
+    loadingSpinner.className = "loading-spinner"
+    loadingSpinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading verification requests...'
+    verificationContainer.appendChild(loadingSpinner)
+
+    // Unsubscribe from previous listener if it exists
+    if (unsubscribeVerificationListener) {
+      unsubscribeVerificationListener()
+      unsubscribeVerificationListener = null
+    }
+
+    // Set up real-time listener for verification requests
+    unsubscribeVerificationListener = db
+      .collection("users")
+      .where("verification.status", "==", "pending")
+      .onSnapshot(
+        (snapshot) => {
+          // Remove loading spinner
+          if (loadingSpinner.parentNode) {
+            loadingSpinner.parentNode.removeChild(loadingSpinner)
+          }
+
+          // Check if there are any pending verification requests
+          if (snapshot.empty) {
+            const emptyMessage = document.createElement("div")
+            emptyMessage.className = "empty-message"
+            emptyMessage.innerHTML = '<i class="fas fa-check-circle"></i><p>No pending verification requests</p>'
+            verificationContainer.appendChild(emptyMessage)
+            return
+          }
+
+          // Create container for verification cards
+          const cardContainer = document.createElement("div")
+          cardContainer.className = "verification-card-container"
+          verificationContainer.appendChild(cardContainer)
+
+          // Add each verification request
+          snapshot.forEach((doc) => {
+            const userData = doc.data()
+            const userId = doc.id
+
+            if (userData.verification && userData.verification.photoURL) {
+              const verificationCard = createVerificationCard(userId, userData)
+              cardContainer.appendChild(verificationCard)
+            }
+          })
+        },
+        (error) => {
+          console.error("Error loading verification requests:", error)
+          verificationContainer.innerHTML =
+            '<h3>Verification Requests</h3><p class="error-message">Error loading verification requests. Please refresh the page.</p>'
+        },
+      )
+  }
+
+  // Create verification card
+  const createVerificationCard = (userId, userData) => {
+    const card = document.createElement("div")
+    card.className = "verification-card"
+
+    // Extract user info
+    const name = userData.name || "Unknown User"
+    const photoURL = userData.photoURL || "/placeholder.svg"
+    const verificationPhotoURL = userData.verification ? userData.verification.photoURL : null
+    const verificationTimestamp =
+      userData.verification && userData.verification.timestamp
+        ? new Date(userData.verification.timestamp.seconds * 1000).toLocaleString()
+        : "Unknown date"
+
+    // Create card HTML
+    card.innerHTML = `
+      <div class="verification-user-info">
+        <img src="${photoURL}" alt="${name}" class="user-avatar">
+        <div class="user-details">
+          <h4>${name}</h4>
+          <p class="user-id">ID: ${userId}</p>
+          <p class="verification-date">Requested: ${verificationTimestamp}</p>
+        </div>
+      </div>
+      <div class="verification-photo-container">
+        <img src="${verificationPhotoURL}" alt="Verification photo" class="verification-photo">
+      </div>
+      <div class="verification-actions">
+        <button class="btn approve-btn" data-user-id="${userId}">
+          <i class="fas fa-check"></i> Approve
+        </button>
+        <button class="btn reject-btn" data-user-id="${userId}">
+          <i class="fas fa-times"></i> Reject
+        </button>
+      </div>
+    `
+
+    // Add event listeners for approve and reject buttons
+    const approveBtn = card.querySelector(".approve-btn")
+    const rejectBtn = card.querySelector(".reject-btn")
+
+    if (approveBtn) {
+      approveBtn.addEventListener("click", () => handleVerificationAction(userId, "verified", verificationPhotoURL))
+    }
+
+    if (rejectBtn) {
+      rejectBtn.addEventListener("click", () => handleVerificationAction(userId, "rejected", verificationPhotoURL))
+    }
+
+    return card
+  }
+
+  // Handle verification action (approve or reject)
+  const handleVerificationAction = async (userId, status, photoURL) => {
     try {
-      showLoadingOverlay()
+      // Confirm action
+      const action = status === "verified" ? "approve" : "reject"
+      const confirmed = confirm(`Are you sure you want to ${action} this verification request?`)
+      if (!confirmed) return
 
-      // Show loading state
-      const verificationList = document.getElementById("verification-list")
-      if (verificationList) {
-        verificationList.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading verification requests...</p>
-          </div>
-        `
+      // Update user document
+      await db.collection("users").doc(userId).update({
+        "verification.status": status,
+        "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
+        "verification.reviewedBy": auth.currentUser.uid,
+      })
+
+      // If approved, also update the user's verified status
+      if (status === "verified") {
+        await db.collection("users").doc(userId).update({
+          verified: true,
+        })
       }
 
-      // Clear selected verification
-      selectedVerification = null
-
-      // Reset verification detail
-      const verificationDetail = document.getElementById("verification-detail")
-      if (verificationDetail) {
-        verificationDetail.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-user-check"></i>
-            <p>Select a verification request to view details</p>
-          </div>
-        `
+      // Delete verification photo from storage after processing
+      if (photoURL && storage) {
+        try {
+          // Extract the path from the URL
+          const storageRef = storage.refFromURL(photoURL)
+          await storageRef.delete()
+          console.log(`Verification photo deleted: ${photoURL}`)
+        } catch (deleteError) {
+          console.error("Error deleting verification photo:", deleteError)
+          // Continue with the process even if image deletion fails
+        }
       }
 
-      // Clean up existing listener
-      if (verificationListener) {
-        verificationListener()
-        verificationListener = null
-      }
-
-      // Set up real-time listener
-      verificationListener = db
-        .collection("users")
-        .where("verification.status", "==", status)
-        .onSnapshot(
-          (snapshot) => {
-            // Process results
-            verificationRequests = []
-
-            snapshot.forEach((doc) => {
-              const userData = doc.data()
-
-              if (userData.verification) {
-                verificationRequests.push({
-                  id: doc.id,
-                  name: userData.name || "Unknown User",
-                  email: userData.email || "",
-                  photoURL: userData.photoURL || "",
-                  verification: userData.verification,
-                })
-              }
-            })
-
-            // Sort by timestamp (newest first)
-            verificationRequests.sort((a, b) => {
-              const aTime = a.verification.timestamp ? a.verification.timestamp.toDate() : new Date(0)
-              const bTime = b.verification.timestamp ? b.verification.timestamp.toDate() : new Date(0)
-
-              return bTime - aTime
-            })
-
-            hideLoadingOverlay()
-
-            // Render list
-            renderVerificationList()
-          },
-          (error) => {
-            console.error("Error in verification listener:", error)
-            hideLoadingOverlay()
-
-            if (window.utils && window.utils.showNotification) {
-              window.utils.showNotification("Error loading verification requests: " + error.message, "error")
-            }
-
-            // Show error state
-            const verificationList = document.getElementById("verification-list")
-            if (verificationList) {
-              verificationList.innerHTML = `
-              <div class="empty-state">
-                <i class="fas fa-exclamation-circle"></i>
-                <p>Error loading verification requests. Please try again.</p>
-              </div>
-            `
-            }
-          },
-        )
+      // Show success notification
+      alert(`Verification request ${action}ed successfully!`)
     } catch (error) {
-      console.error("Error setting up verification listener:", error)
-      hideLoadingOverlay()
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error loading verification requests: " + error.message, "error")
-      }
-
-      // Show error state
-      const verificationList = document.getElementById("verification-list")
-      if (verificationList) {
-        verificationList.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-exclamation-circle"></i>
-            <p>Error loading verification requests. Please try again.</p>
-          </div>
-        `
-      }
+      console.error(`Error ${status === "verified" ? "approving" : "rejecting"} verification:`, error)
+      alert(`Error ${status === "verified" ? "approving" : "rejecting"} verification. Please try again.`)
     }
   }
 
@@ -1704,6 +1733,159 @@ const adminModule = (() => {
     })
   }
 
+  // Load statistics
+  const loadStatistics = async () => {
+    if (!statisticsContainer) return
+
+    try {
+      // Create loading indicator
+      statisticsContainer.innerHTML =
+        '<h3>User Statistics</h3><div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading statistics...</div>'
+
+      // Get total users count
+      const usersSnapshot = await db.collection("users").get()
+      const totalUsers = usersSnapshot.size
+
+      // Get verified users count
+      const verifiedUsersSnapshot = await db.collection("users").where("verified", "==", true).get()
+      const verifiedUsers = verifiedUsersSnapshot.size
+
+      // Get pending verifications count
+      const pendingVerificationsSnapshot = await db
+        .collection("users")
+        .where("verification.status", "==", "pending")
+        .get()
+      const pendingVerifications = pendingVerificationsSnapshot.size
+
+      // Get total matches count
+      const matchesSnapshot = await db.collection("matches").get()
+      const totalMatches = matchesSnapshot.size
+
+      // Calculate gender distribution
+      let maleUsers = 0
+      let femaleUsers = 0
+      let otherUsers = 0
+
+      usersSnapshot.forEach((doc) => {
+        const userData = doc.data()
+        if (userData.gender === "male") {
+          maleUsers++
+        } else if (userData.gender === "female") {
+          femaleUsers++
+        } else {
+          otherUsers++
+        }
+      })
+
+      // Update statistics container
+      statisticsContainer.innerHTML = `
+        <h3>User Statistics</h3>
+        <div class="statistics-grid">
+          <div class="statistic-card">
+            <div class="statistic-value">${totalUsers}</div>
+            <div class="statistic-label">Total Users</div>
+          </div>
+          <div class="statistic-card">
+            <div class="statistic-value">${verifiedUsers}</div>
+            <div class="statistic-label">Verified Users</div>
+          </div>
+          <div class="statistic-card">
+            <div class="statistic-value">${pendingVerifications}</div>
+            <div class="statistic-label">Pending Verifications</div>
+          </div>
+          <div class="statistic-card">
+            <div class="statistic-value">${totalMatches}</div>
+            <div class="statistic-label">Total Matches</div>
+          </div>
+        </div>
+        
+        <div class="chart-container">
+          <h4>Gender Distribution</h4>
+          <canvas id="gender-chart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+          <h4>Verification Status</h4>
+          <canvas id="verification-chart"></canvas>
+        </div>
+      `
+
+      // Create gender distribution chart
+      const genderCtx = document.getElementById("gender-chart")
+      if (genderCtx && window.Chart) {
+        new Chart(genderCtx, {
+          type: "pie",
+          data: {
+            labels: ["Male", "Female", "Other"],
+            datasets: [
+              {
+                data: [maleUsers, femaleUsers, otherUsers],
+                backgroundColor: ["#3498db", "#e74c3c", "#2ecc71"],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+              position: "right",
+            },
+          },
+        })
+      }
+
+      // Create verification status chart
+      const verificationCtx = document.getElementById("verification-chart")
+      if (verificationCtx && window.Chart) {
+        new Chart(verificationCtx, {
+          type: "pie",
+          data: {
+            labels: ["Verified", "Unverified"],
+            datasets: [
+              {
+                data: [verifiedUsers, totalUsers - verifiedUsers],
+                backgroundColor: ["#2ecc71", "#e74c3c"],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            legend: {
+              position: "right",
+            },
+          },
+        })
+      }
+    } catch (error) {
+      console.error("Error loading statistics:", error)
+      statisticsContainer.innerHTML =
+        '<h3>User Statistics</h3><p class="error-message">Error loading statistics. Please refresh the page.</p>'
+    }
+  }
+
+  // Admin login
+  const adminLogin = async (email, password) => {
+    try {
+      await auth.signInWithEmailAndPassword(email, password)
+      // Auth state change listener will handle the rest
+    } catch (error) {
+      console.error("Error during admin login:", error)
+      alert(`Login failed: ${error.message}`)
+    }
+  }
+
+  // Admin logout
+  const adminLogout = async () => {
+    try {
+      await auth.signOut()
+      // Auth state change listener will handle the rest
+    } catch (error) {
+      console.error("Error during admin logout:", error)
+      alert(`Logout failed: ${error.message}`)
+    }
+  }
+
   // Load settings
   const loadSettings = async () => {
     try {
@@ -1935,8 +2117,11 @@ const adminModule = (() => {
   // Expose module
   window.adminModule = {
     init,
-    loadDashboardData,
     loadVerificationRequests,
+    loadStatistics,
+    adminLogin,
+    adminLogout,
+    loadDashboardData,
     loadUsers,
     loadAnalyticsData,
     loadSettings,
@@ -1944,18 +2129,26 @@ const adminModule = (() => {
 
   return {
     init,
-    loadDashboardData,
     loadVerificationRequests,
+    loadStatistics,
+    adminLogin,
+    adminLogout,
+    loadDashboardData,
     loadUsers,
     loadAnalyticsData,
     loadSettings,
   }
 })()
 
-// Initialize on load
+// Initialize on load if we're on the admin page
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("Initializing admin module")
-  if (window.adminModule) {
-    adminModule.init()
+  const path = window.location.pathname
+  if (path.includes("admin.html")) {
+    console.log("Auto-initializing admin module")
+    setTimeout(() => {
+      if (window.adminModule) {
+        adminModule.init()
+      }
+    }, 500)
   }
 })

@@ -1,0 +1,35 @@
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow read access to all users
+    match /profile_images/{userId}/{allImages=**} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+      // Allow write only for the owner
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Gift images can be read by all authenticated users
+    match /gifts/{allGifts=**} {
+      allow read: if request.auth != null;
+      // No writes allowed (gifts are predefined)
+      allow write: if false;
+    }
+    
+    // Verification images - users can upload their own, admins can view all
+    match /verification/{userId}/{allImages=**} {
+      // User can read and write their own verification images
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admins can read all verification images
+      // This checks if the user ID is one of your admin UIDs
+      allow read: if request.auth != null && 
+        (request.auth.uid == "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3" || 
+         request.auth.uid == "TgxwPG9e8NZZXMlMtNpOlmhDwLA2");
+      
+      // Admins can delete verification images after verification
+      allow delete: if request.auth != null && 
+        (request.auth.uid == "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3" || 
+         request.auth.uid == "TgxwPG9e8NZZXMlMtNpOlmhDwLA2");
+    }
+  }
+}
