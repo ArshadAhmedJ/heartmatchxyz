@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Admin Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -2181,8 +2182,6 @@ const adminModule = (() => {
     }
   }
 
-  // Add this function after the loadUsers function
-
   // Load matches
   const loadMatches = async () => {
     try {
@@ -2288,9 +2287,6 @@ const adminModule = (() => {
     }
   }
 
-  // Make sure the renderMatches function is properly implemented
-  // Around line 1100-1200 in the file, replace or update the renderMatches function:
-
   // Render matches
   const renderMatches = (matchesData) => {
     const matchesGrid = document.getElementById("matches-grid")
@@ -2382,87 +2378,6 @@ const adminModule = (() => {
     })
   }
 
-  // Make sure the showSection function properly handles the matches section
-  // Find the showSection function (around line 500-600) and ensure it has this code:
-
-  // Show section
-  const showSection = (section) => {
-    // Update current section
-    currentSection = section
-
-    // Show loading overlay
-    showLoadingOverlay()
-
-    // Update active nav item
-    document.querySelectorAll(".nav-item").forEach((item) => {
-      if (item.getAttribute("data-section") === section) {
-        item.classList.add("active")
-      } else {
-        item.classList.remove("active")
-      }
-    })
-
-    // Show/hide sections
-    document.querySelectorAll(".content-section").forEach((sectionEl) => {
-      if (sectionEl.id === `${section}-section`) {
-        sectionEl.classList.remove("hidden")
-      } else {
-        sectionEl.classList.add("hidden")
-      }
-    })
-
-    // Load section data
-    switch (section) {
-      case "dashboard":
-        loadDashboardData()
-        break
-      case "verification":
-        loadVerificationRequests("pending")
-        break
-      case "users":
-        loadUsers()
-        break
-      case "matches":
-        loadMatches()
-        break
-      case "analytics":
-        loadAnalyticsData("day")
-        break
-      case "settings":
-        loadSettings()
-        break
-    }
-  }
-
-  // Make sure the bindEvents function properly binds events for the matches section
-  // Find the bindEvents function (around line 300-400) and ensure it has this code:
-
-  // Add these event listeners to the bindEvents function
-  // Match search
-  const matchSearchBtn = document.getElementById("match-search-btn")
-  if (matchSearchBtn) {
-    matchSearchBtn.addEventListener("click", searchMatches)
-  }
-
-  // Match search input (enter key)
-  const matchSearch = document.getElementById("match-search")
-  if (matchSearch) {
-    matchSearch.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        searchMatches()
-      }
-    })
-  }
-
-  // Refresh matches
-  const refreshMatches = document.getElementById("refresh-matches")
-  if (refreshMatches) {
-    refreshMatches.addEventListener("click", loadMatches)
-  }
-
-  // Make sure the searchMatches function is properly implemented
-  // Add or update the searchMatches function:
-
   // Search matches
   const searchMatches = () => {
     const searchInput = document.getElementById("match-search")
@@ -2501,9 +2416,6 @@ const adminModule = (() => {
       }
     }
   }
-
-  // Make sure the deleteMatch function is properly implemented
-  // Add or update the deleteMatch function:
 
   // Delete match
   const deleteMatch = async (matchId) => {
