@@ -15,21 +15,22 @@ service firebase.storage {
       allow write: if false;
     }
     
-    // Verification images - users can upload their own, admins can view all
+    // Verification photos - allow users to upload their own verification photos
     match /verification/{userId}/{allImages=**} {
-      // User can read and write their own verification images
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow read for the owner and admins
+      allow read: if request.auth != null && (
+        request.auth.uid == userId || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
       
-      // Admins can read all verification images
-      // This checks if the user ID is one of your admin UIDs
-      allow read: if request.auth != null && 
-        (request.auth.uid == "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3" || 
-         request.auth.uid == "TgxwPG9e8NZZXMlMtNpOlmhDwLA2");
+      // Allow write only for the owner
+      allow write: if request.auth != null && request.auth.uid == userId;
       
-      // Admins can delete verification images after verification
-      allow delete: if request.auth != null && 
-        (request.auth.uid == "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3" || 
-         request.auth.uid == "TgxwPG9e8NZZXMlMtNpOlmhDwLA2");
+      // Allow delete for admins and the owner
+      allow delete: if request.auth != null && (
+        request.auth.uid == userId || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
     }
   }
 }
