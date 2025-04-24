@@ -1,4 +1,3 @@
-import { Chart } from "@/components/ui/chart"
 // Admin Panel Module
 const adminModule = (() => {
   // Firebase services
