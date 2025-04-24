@@ -6,8 +6,8 @@ const adminModule = (() => {
   // State
   let currentUser = null
   let currentSection = "dashboard"
-  const verificationRequests = []
-  let selectedVerification = null
+  let verificationRequests = []
+  const selectedVerification = null
   let usersList = []
   let currentPage = 1
   const usersPerPage = 10
@@ -26,58 +26,509 @@ const adminModule = (() => {
   const init = () => {
     console.log("Initializing admin module")
 
-    // Add styles to the head for verification buttons if not already there
+    // Add styles to the head for verification UI improvements
     if (!document.getElementById("admin-verification-styles")) {
       const style = document.createElement("style")
       style.id = "admin-verification-styles"
       style.innerHTML = `
-    .verification-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-    
-    .verification-actions button {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-weight: 500;
-    }
-    
-    .verification-actions .approve-btn {
-      background-color: #4CAF50;
-      color: white;
-    }
-    
-    .verification-actions .reject-btn {
-      background-color: #F44336;
-      color: white;
-    }
-    
-    .verification-actions button:hover {
-      opacity: 0.9;
-    }
-    
-    .verification-actions button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    
-    .verification-detail-photo {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    
-    .user-additional-info {
-      margin-bottom: 15px;
-    }
-  `
+        /* Verification UI Improvements */
+        .verification-card-container {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+          margin-top: 20px;
+        }
+        
+        .verification-card {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .verification-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        .verification-user-info {
+          padding: 15px;
+          display: flex;
+          align-items: center;
+          border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .user-avatar {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-right: 15px;
+          border: 2px solid #ff4b7d;
+        }
+        
+        .user-details {
+          flex: 1;
+        }
+        
+        .user-details h4 {
+          margin: 0 0 5px 0;
+          color: #333;
+          font-size: 18px;
+        }
+        
+        .user-details p {
+          margin: 0 0 3px 0;
+          color: #666;
+          font-size: 13px;
+        }
+        
+        .verification-photo-container {
+          position: relative;
+          height: 200px;
+          overflow: hidden;
+        }
+        
+        .verification-photo {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s ease;
+        }
+        
+        .verification-photo-container:hover .verification-photo {
+          transform: scale(1.05);
+        }
+        
+        .verification-actions {
+          display: flex;
+          padding: 15px;
+          gap: 10px;
+        }
+        
+        .verification-actions button {
+          flex: 1;
+          padding: 10px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          transition: background-color 0.3s ease;
+        }
+        
+        .verification-actions .approve-btn {
+          background-color: #4CAF50;
+          color: white;
+        }
+        
+        .verification-actions .approve-btn:hover {
+          background-color: #3d8b40;
+        }
+        
+        .verification-actions .reject-btn {
+          background-color: #F44336;
+          color: white;
+        }
+        
+        .verification-actions .reject-btn:hover {
+          background-color: #d32f2f;
+        }
+        
+        .verification-actions button:disabled {
+          background-color: #cccccc;
+          cursor: not-allowed;
+        }
+        
+        .verification-actions button i {
+          font-size: 16px;
+        }
+        
+        .verification-status-badge {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          padding: 5px 10px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+          text-transform: uppercase;
+        }
+        
+        .verification-status-badge.pending {
+          background-color: #FFC107;
+          color: #333;
+        }
+        
+        .verification-status-badge.verified {
+          background-color: #4CAF50;
+          color: white;
+        }
+        
+        .verification-status-badge.rejected {
+          background-color: #F44336;
+          color: white;
+        }
+        
+        .verification-timestamp {
+          position: absolute;
+          bottom: 10px;
+          left: 10px;
+          padding: 3px 8px;
+          background-color: rgba(0, 0, 0, 0.6);
+          color: white;
+          border-radius: 4px;
+          font-size: 12px;
+        }
+        
+        .verification-filter-container {
+          display: flex;
+          align-items: center;
+          margin-bottom: 20px;
+          gap: 15px;
+          flex-wrap: wrap;
+        }
+        
+        .verification-filter-label {
+          font-weight: 500;
+          color: #555;
+        }
+        
+        .verification-filter-select {
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          background-color: white;
+          min-width: 150px;
+        }
+        
+        .verification-search {
+          flex: 1;
+          min-width: 200px;
+          position: relative;
+        }
+        
+        .verification-search input {
+          width: 100%;
+          padding: 8px 12px 8px 35px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+        }
+        
+        .verification-search i {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #777;
+        }
+        
+        .verification-refresh-btn {
+          padding: 8px 15px;
+          background-color: #f5f5f5;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+        
+        .verification-refresh-btn:hover {
+          background-color: #e0e0e0;
+        }
+        
+        .verification-detail-view {
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          padding: 20px;
+          margin-top: 20px;
+        }
+        
+        .verification-detail-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          padding-bottom: 15px;
+          border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .verification-detail-user {
+          display: flex;
+          align-items: center;
+        }
+        
+        .verification-detail-photo {
+          width: 70px;
+          height: 70px;
+          border-radius: 50%;
+          object-fit: cover;
+          margin-right: 15px;
+          border: 2px solid #ff4b7d;
+        }
+        
+        .verification-detail-info h3 {
+          margin: 0 0 5px 0;
+          color: #333;
+        }
+        
+        .verification-detail-info p {
+          margin: 0 0 3px 0;
+          color: #666;
+        }
+        
+        .verification-detail-status {
+          padding: 5px 15px;
+          border-radius: 20px;
+          font-size: 14px;
+          font-weight: 500;
+          text-transform: uppercase;
+        }
+        
+        .verification-detail-status.pending {
+          background-color: #FFC107;
+          color: #333;
+        }
+        
+        .verification-detail-status.verified {
+          background-color: #4CAF50;
+          color: white;
+        }
+        
+        .verification-detail-status.rejected {
+          background-color: #F44336;
+          color: white;
+        }
+        
+        .verification-detail-content {
+          margin-bottom: 20px;
+        }
+        
+        .user-additional-info {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 15px;
+          margin-bottom: 20px;
+          background-color: #f9f9f9;
+          padding: 15px;
+          border-radius: 8px;
+        }
+        
+        .user-additional-info p {
+          margin: 0;
+        }
+        
+        .verification-photos {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: 20px;
+        }
+        
+        .verification-photo-card {
+          background-color: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .verification-photo-card img {
+          width: 100%;
+          height: 250px;
+          object-fit: cover;
+        }
+        
+        .verification-photo-label {
+          padding: 10px;
+          text-align: center;
+          background-color: #f5f5f5;
+          font-weight: 500;
+          color: #555;
+        }
+        
+        .verification-detail-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 15px;
+          margin-top: 20px;
+        }
+        
+        .verification-detail-actions button {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: background-color 0.3s ease;
+        }
+        
+        .verification-detail-actions .approve-btn {
+          background-color: #4CAF50;
+          color: white;
+        }
+        
+        .verification-detail-actions .approve-btn:hover {
+          background-color: #3d8b40;
+        }
+        
+        .verification-detail-actions .reject-btn {
+          background-color: #F44336;
+          color: white;
+        }
+        
+        .verification-detail-actions .reject-btn:hover {
+          background-color: #d32f2f;
+        }
+        
+        .verification-detail-actions button:disabled {
+          background-color: #cccccc;
+          cursor: not-allowed;
+        }
+        
+        .verification-detail-actions button i {
+          font-size: 18px;
+        }
+        
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 50px 20px;
+          text-align: center;
+        }
+        
+        .empty-state i {
+          font-size: 60px;
+          color: #ddd;
+          margin-bottom: 20px;
+        }
+        
+        .empty-state p {
+          color: #777;
+          font-size: 18px;
+          margin: 0;
+        }
+        
+        /* Login UI Improvements */
+        .admin-login-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          min-height: 100vh;
+          background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+        }
+        
+        .admin-login-card {
+          background-color: white;
+          border-radius: 15px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+          width: 100%;
+          max-width: 450px;
+          overflow: hidden;
+          animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .admin-login-header {
+          background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+          color: white;
+          padding: 30px;
+          text-align: center;
+        }
+        
+        .admin-login-logo {
+          width: 100px;
+          height: 100px;
+          object-fit: contain;
+          margin-bottom: 15px;
+          animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        
+        .admin-login-header h2 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 600;
+        }
+        
+        .admin-login-body {
+          padding: 40px;
+          text-align: center;
+        }
+        
+        .admin-login-message {
+          margin-bottom: 30px;
+          color: #666;
+          font-size: 16px;
+          line-height: 1.5;
+        }
+        
+        .admin-login-btn {
+          background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+          color: white;
+          border: none;
+          border-radius: 30px;
+          padding: 12px 30px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(255, 75, 125, 0.3);
+          width: 100%;
+        }
+        
+        .admin-login-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(255, 75, 125, 0.4);
+        }
+        
+        .admin-login-btn:active {
+          transform: translateY(1px);
+        }
+        
+        .admin-login-btn i {
+          font-size: 20px;
+        }
+        
+        .admin-login-footer {
+          padding: 0 40px 30px;
+          text-align: center;
+          color: #888;
+          font-size: 14px;
+        }
+        
+        .admin-login-footer a {
+          color: #ff4b7d;
+          text-decoration: none;
+        }
+        
+        .admin-login-footer a:hover {
+          text-decoration: underline;
+        }
+      `
       document.head.appendChild(style)
     }
 
@@ -109,45 +560,41 @@ const adminModule = (() => {
     try {
       console.log("Initializing Firebase...")
 
-      // Check if Firebase is already initialized
-      if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
-        console.log("Firebase already initialized, getting services")
-        firebase = window.firebase
-        auth = firebase.auth()
-        db = firebase.firestore()
-        storage = firebase.storage ? firebase.storage() : null
-        functions = firebase.functions ? firebase.functions() : null
-
-        // Set up auth state listener
-        auth.onAuthStateChanged(handleAuthStateChanged)
-
-        // Bind events after Firebase is initialized
-        bindEvents()
-
-        return
-      }
-
       // Your Firebase config
       const firebaseConfig = {
         apiKey: "AIzaSyAsc5FpnqdJdUXql2jAIPf7-VSLIv4TIv0",
         authDomain: "datingapp-482ac.firebaseapp.com",
         projectId: "datingapp-482ac",
-        storageBucket: "datingapp-482ac.firebasestorage.app",
+        storageBucket: "datingapp-482ac.appspot.com",
         messagingSenderId: "672058081482",
         appId: "1:672058081482:web:d61e90a5f397eb46e4b433",
         measurementId: "G-F300RLDGVF",
       }
 
-      // Initialize Firebase
-      window.firebase.initializeApp(firebaseConfig)
-      console.log("Firebase initialized successfully")
+      // Check if Firebase is already initialized
+      if (!window.firebase || !window.firebase.apps || window.firebase.apps.length === 0) {
+        // Initialize Firebase
+        window.firebase.initializeApp(firebaseConfig)
+        console.log("Firebase initialized successfully")
+      } else {
+        console.log("Firebase already initialized")
+      }
 
       // Get Firebase services
       firebase = window.firebase
       auth = firebase.auth()
       db = firebase.firestore()
-      storage = firebase.storage ? firebase.storage() : null
-      functions = firebase.functions ? firebase.functions() : null
+      storage = firebase.storage()
+      functions = firebase.functions()
+
+      // Enable offline persistence for Firestore
+      db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+        if (err.code === "failed-precondition") {
+          console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.")
+        } else if (err.code === "unimplemented") {
+          console.warn("The current browser does not support all of the features required to enable persistence")
+        }
+      })
 
       // Set up auth state listener
       auth.onAuthStateChanged(handleAuthStateChanged)
@@ -158,6 +605,7 @@ const adminModule = (() => {
       console.error("Error initializing Firebase:", error)
       showError("Failed to initialize Firebase: " + error.message)
       hideLoadingOverlay()
+      showLoginScreen()
     }
   }
 
@@ -204,6 +652,12 @@ const adminModule = (() => {
 
     // Sign in with popup
     const provider = new firebase.auth.GoogleAuthProvider()
+
+    // Add custom parameters for Google sign-in
+    provider.setCustomParameters({
+      prompt: "select_account",
+    })
+
     auth
       .signInWithPopup(provider)
       .then((result) => {
@@ -225,7 +679,12 @@ const adminModule = (() => {
   const checkAdminAccess = async () => {
     try {
       // List of admin UIDs - only these users can access the admin panel
-      const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
+      const adminUIDs = [
+        "Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1",
+        "U60X51daggVxsyFzJ01u2LBlLyK2",
+        "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3",
+        "TgxwPG9e8NZZXMlMtNpOlmhDwLA2",
+      ]
 
       // Check if current user is in the admin list
       if (!adminUIDs.includes(currentUser.uid)) {
@@ -245,7 +704,8 @@ const adminModule = (() => {
         const adminPhoto = document.getElementById("admin-photo")
 
         if (adminName) {
-          adminName.textContent = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
+          adminName.textContent =
+            userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.displayName || currentUser.email
         }
 
         if (adminPhoto) {
@@ -257,7 +717,8 @@ const adminModule = (() => {
             adminPhoto.textContent = ""
           } else {
             // Set initials
-            const name = userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.email
+            const name =
+              userDoc.exists && userDoc.data().name ? userDoc.data().name : currentUser.displayName || currentUser.email
             adminPhoto.textContent = name.charAt(0).toUpperCase()
           }
         }
@@ -305,7 +766,34 @@ const adminModule = (() => {
 
     if (adminPage) adminPage.classList.add("hidden")
     if (accessDenied) accessDenied.classList.add("hidden")
-    if (loginContainer) loginContainer.classList.remove("hidden")
+    if (loginContainer) {
+      loginContainer.classList.remove("hidden")
+
+      // Update login container with improved UI
+      loginContainer.innerHTML = `
+        <div class="admin-login-card">
+          <div class="admin-login-header">
+            <img src="images/BLK7-logo.png" alt="HeartMatch Logo" class="admin-login-logo">
+            <h2>Admin Dashboard</h2>
+          </div>
+          <div class="admin-login-body">
+            <p class="admin-login-message">Please sign in with your Google account to access the HeartMatch admin dashboard.</p>
+            <button id="admin-login-btn" class="admin-login-btn">
+              <i class="fab fa-google"></i> Sign in with Google
+            </button>
+          </div>
+          <div class="admin-login-footer">
+            <p>Need help? <a href="mailto:support@heartmatch.com">Contact Support</a></p>
+          </div>
+        </div>
+      `
+
+      // Rebind login button
+      const adminLoginBtn = document.getElementById("admin-login-btn")
+      if (adminLoginBtn) {
+        adminLoginBtn.addEventListener("click", handleAdminLogin)
+      }
+    }
   }
 
   // Show access denied
@@ -319,7 +807,39 @@ const adminModule = (() => {
 
     if (adminPage) adminPage.classList.add("hidden")
     if (loginContainer) loginContainer.classList.add("hidden")
-    if (accessDenied) accessDenied.classList.remove("hidden")
+    if (accessDenied) {
+      accessDenied.classList.remove("hidden")
+
+      // Update access denied container with improved UI
+      accessDenied.innerHTML = `
+        <div class="access-denied-card">
+          <div class="access-denied-icon">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h2>Access Denied</h2>
+          <p>You don't have permission to access the admin panel. Please contact an administrator if you believe this is an error.</p>
+          <button id="back-to-app-btn" class="btn primary-btn">Back to App</button>
+          <button id="try-another-account-btn" class="btn secondary-btn">Try Another Account</button>
+        </div>
+      `
+
+      // Rebind buttons
+      const backToAppBtn = document.getElementById("back-to-app-btn")
+      if (backToAppBtn) {
+        backToAppBtn.addEventListener("click", () => {
+          window.location.href = "dashboard.html"
+        })
+      }
+
+      const tryAnotherAccountBtn = document.getElementById("try-another-account-btn")
+      if (tryAnotherAccountBtn) {
+        tryAnotherAccountBtn.addEventListener("click", () => {
+          auth.signOut().then(() => {
+            showLoginScreen()
+          })
+        })
+      }
+    }
   }
 
   // Show admin panel
@@ -340,6 +860,15 @@ const adminModule = (() => {
   const showError = (message) => {
     if (window.utils && window.utils.showNotification) {
       window.utils.showNotification(message, "error")
+    } else {
+      alert(message)
+    }
+  }
+
+  // Show success notification
+  const showSuccess = (message) => {
+    if (window.utils && window.utils.showNotification) {
+      window.utils.showNotification(message, "success")
     } else {
       alert(message)
     }
@@ -815,160 +1344,402 @@ const adminModule = (() => {
   }
 
   // Load verification requests
-  let unsubscribeVerificationListener = null
-  const verificationContainer = document.getElementById("verification-section")
+  const loadVerificationRequests = async (status = "pending") => {
+    try {
+      showLoadingOverlay()
 
-  const loadVerificationRequests = (status = "pending") => {
-    if (!verificationContainer) return
+      // Get the verification section
+      const verificationSection = document.getElementById("verification-section")
+      if (!verificationSection) {
+        hideLoadingOverlay()
+        return
+      }
 
-    // Clear existing content
-    verificationContainer.innerHTML = "<h3>Verification Requests</h3>"
+      // Create improved UI for verification section
+      verificationSection.innerHTML = `
+        <div class="section-header">
+          <h2>Verification Requests</h2>
+          <div class="verification-filter-container">
+            <div class="verification-filter-label">Status:</div>
+            <select id="verification-filter" class="verification-filter-select">
+              <option value="pending" ${status === "pending" ? "selected" : ""}>Pending</option>
+              <option value="verified" ${status === "verified" ? "selected" : ""}>Approved</option>
+              <option value="rejected" ${status === "rejected" ? "selected" : ""}>Rejected</option>
+              <option value="all">All</option>
+            </select>
+            <div class="verification-search">
+              <i class="fas fa-search"></i>
+              <input type="text" id="verification-search" placeholder="Search by name or email...">
+            </div>
+            <button id="refresh-verification" class="verification-refresh-btn">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+        
+        <div id="verification-loading" class="empty-state">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading verification requests...</p>
+        </div>
+        
+        <div id="verification-container" class="verification-card-container" style="display: none;"></div>
+        
+        <div id="verification-empty" class="empty-state" style="display: none;">
+          <i class="fas fa-user-check"></i>
+          <p>No ${status} verification requests found</p>
+        </div>
+        
+        <div id="verification-detail-view" class="verification-detail-view" style="display: none;"></div>
+      `
 
-    // Create loading indicator
-    const loadingSpinner = document.createElement("div")
-    loadingSpinner.className = "loading-spinner"
-    loadingSpinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading verification requests...'
-    verificationContainer.appendChild(loadingSpinner)
+      // Rebind events for the new elements
+      const verificationFilter = document.getElementById("verification-filter")
+      if (verificationFilter) {
+        verificationFilter.addEventListener("change", () => {
+          loadVerificationRequests(verificationFilter.value)
+        })
+      }
 
-    // Unsubscribe from previous listener if it exists
-    if (unsubscribeVerificationListener) {
-      unsubscribeVerificationListener()
-      unsubscribeVerificationListener = null
-    }
+      const refreshVerification = document.getElementById("refresh-verification")
+      if (refreshVerification) {
+        refreshVerification.addEventListener("click", () => {
+          const filter = document.getElementById("verification-filter").value
+          loadVerificationRequests(filter)
+        })
+      }
 
-    // Set up real-time listener for verification requests
-    unsubscribeVerificationListener = db
-      .collection("users")
-      .where("verification.status", "==", status)
-      .onSnapshot(
+      const verificationSearch = document.getElementById("verification-search")
+      if (verificationSearch) {
+        verificationSearch.addEventListener("keyup", filterVerificationRequests)
+        verificationSearch.addEventListener("search", filterVerificationRequests)
+      }
+
+      // Clean up existing listener
+      if (verificationListener) {
+        verificationListener()
+        verificationListener = null
+      }
+
+      // Set up query based on status
+      let query = db.collection("users")
+
+      if (status !== "all") {
+        query = query.where("verification.status", "==", status)
+      }
+
+      // Set up real-time listener
+      verificationListener = query.onSnapshot(
         async (snapshot) => {
-          // Remove loading spinner
-          if (loadingSpinner.parentNode) {
-            loadingSpinner.parentNode.removeChild(loadingSpinner)
-          }
+          // Process results
+          verificationRequests = []
 
-          // Check if there are any pending verification requests
-          if (snapshot.empty) {
-            const emptyMessage = document.createElement("div")
-            emptyMessage.className = "empty-message"
-            emptyMessage.innerHTML = `<i class="fas fa-check-circle"></i><p>No ${status} verification requests</p>`
-            verificationContainer.appendChild(emptyMessage)
-            return
-          }
-
-          // Create container for verification cards
-          const cardContainer = document.createElement("div")
-          cardContainer.className = "verification-card-container"
-          verificationContainer.appendChild(cardContainer)
-
-          // Add each verification request
           snapshot.forEach((doc) => {
             const userData = doc.data()
-            const userId = doc.id
 
             if (userData.verification) {
-              const verificationCard = createVerificationCard(userId, userData)
-              cardContainer.appendChild(verificationCard)
+              verificationRequests.push({
+                id: doc.id,
+                name: userData.name || "Unknown User",
+                email: userData.email || "",
+                phone: userData.phone || "",
+                photoURL: userData.photoURL || "",
+                age: userData.age || "",
+                gender: userData.gender || "",
+                bio: userData.bio || "",
+                verification: userData.verification,
+              })
             }
           })
+
+          // Sort by timestamp (newest first)
+          verificationRequests.sort((a, b) => {
+            const aTime = a.verification.timestamp ? a.verification.timestamp.toDate() : new Date(0)
+            const bTime = b.verification.timestamp ? b.verification.timestamp.toDate() : new Date(0)
+
+            return bTime - aTime
+          })
+
+          hideLoadingOverlay()
+
+          // Hide loading state
+          document.getElementById("verification-loading").style.display = "none"
+
+          // Show empty state or render verification cards
+          if (verificationRequests.length === 0) {
+            document.getElementById("verification-empty").style.display = "flex"
+            document.getElementById("verification-container").style.display = "none"
+          } else {
+            document.getElementById("verification-empty").style.display = "none"
+            document.getElementById("verification-container").style.display = "grid"
+            renderVerificationCards()
+          }
         },
         (error) => {
-          console.error("Error loading verification requests:", error)
-          if (loadingSpinner.parentNode) {
-            loadingSpinner.parentNode.removeChild(loadingSpinner)
-          }
+          console.error("Error in verification listener:", error)
+          hideLoadingOverlay()
 
-          const errorMessage = document.createElement("div")
-          errorMessage.className = "error-message"
-          errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i><p>Error loading verification requests: ${error.message}</p>`
-          verificationContainer.appendChild(errorMessage)
+          // Show error state
+          document.getElementById("verification-loading").innerHTML = `
+            <i class="fas fa-exclamation-circle"></i>
+            <p>Error loading verification requests: ${error.message}</p>
+          `
         },
       )
+    } catch (error) {
+      console.error("Error setting up verification listener:", error)
+      hideLoadingOverlay()
+
+      if (window.utils && window.utils.showNotification) {
+        window.utils.showNotification("Error loading verification requests: " + error.message, "error")
+      }
+    }
   }
 
-  // Create verification card
-  const createVerificationCard = (userId, userData) => {
-    const card = document.createElement("div")
-    card.className = "verification-card"
+  // Filter verification requests
+  const filterVerificationRequests = () => {
+    const searchInput = document.getElementById("verification-search")
+    if (!searchInput) return
 
-    // Extract user info
-    const name = userData.name || "Unknown User"
-    const email = userData.email || "No Email"
-    const phone = userData.phone || "No Phone"
-    const photoURL = userData.photoURL || "/images/default-avatar.png"
-    const verificationPhotoURL =
-      userData.verification && userData.verification.photoURL
-        ? userData.verification.photoURL
-        : "/images/verification-pose.png"
-    const verificationTimestamp =
-      userData.verification && userData.verification.timestamp
-        ? new Date(userData.verification.timestamp.seconds * 1000).toLocaleString()
-        : "Unknown date"
+    const searchTerm = searchInput.value.toLowerCase().trim()
 
-    // Create card HTML
-    card.innerHTML = `
-    <div class="verification-user-info">
-      <img src="${photoURL}" alt="${name}" class="user-avatar" onerror="this.src='/images/default-avatar.png'">
-      <div class="user-details">
-        <h4>${name}</h4>
-        <p class="user-id">ID: ${userId}</p>
-        <p class="user-email">Email: ${email}</p>
-        <p class="user-phone">Phone: ${phone}</p>
-        <p class="verification-date">Requested: ${verificationTimestamp}</p>
+    // Get all verification cards
+    const cards = document.querySelectorAll(".verification-card")
+
+    cards.forEach((card) => {
+      const name = card.querySelector(".user-name")?.textContent.toLowerCase() || ""
+      const email = card.querySelector(".user-email")?.textContent.toLowerCase() || ""
+
+      if (name.includes(searchTerm) || email.includes(searchTerm) || searchTerm === "") {
+        card.style.display = "block"
+      } else {
+        card.style.display = "none"
+      }
+    })
+
+    // Check if any cards are visible
+    const visibleCards = document.querySelectorAll(".verification-card[style='display: block']")
+
+    if (visibleCards.length === 0 && searchTerm !== "") {
+      // Show no results message
+      const container = document.getElementById("verification-container")
+
+      // Check if no results message already exists
+      if (!document.getElementById("no-results-message")) {
+        const noResults = document.createElement("div")
+        noResults.id = "no-results-message"
+        noResults.className = "empty-state"
+        noResults.innerHTML = `
+          <i class="fas fa-search"></i>
+          <p>No results found for "${searchTerm}"</p>
+        `
+        container.appendChild(noResults)
+      }
+    } else {
+      // Remove no results message if it exists
+      const noResults = document.getElementById("no-results-message")
+      if (noResults) {
+        noResults.remove()
+      }
+    }
+  }
+
+  // Render verification cards
+  const renderVerificationCards = () => {
+    const container = document.getElementById("verification-container")
+    if (!container) return
+
+    container.innerHTML = ""
+
+    verificationRequests.forEach((request) => {
+      const card = document.createElement("div")
+      card.className = "verification-card"
+      card.setAttribute("data-id", request.id)
+
+      // Format timestamp
+      const timestamp = request.verification.timestamp
+        ? request.verification.timestamp.toDate().toLocaleString()
+        : "Unknown"
+
+      // Create card HTML with improved UI
+      card.innerHTML = `
+        <div class="verification-user-info">
+          <img src="${request.photoURL || "images/default-avatar.png"}" alt="${request.name}" class="user-avatar" onerror="this.src='images/default-avatar.png'">
+          <div class="user-details">
+            <h4 class="user-name">${request.name}</h4>
+            <p class="user-email">${request.email}</p>
+            <p class="user-phone">${request.phone || "No phone"}</p>
+          </div>
+        </div>
+        <div class="verification-photo-container">
+          <img src="${request.verification.photoURL || "images/verification-pose.png"}" alt="Verification photo" class="verification-photo" onerror="this.src='images/verification-pose.png'">
+          <div class="verification-status-badge ${request.verification.status}">${request.verification.status}</div>
+          <div class="verification-timestamp">${timestamp}</div>
+        </div>
+        <div class="verification-actions">
+          <button class="approve-btn" data-id="${request.id}" ${request.verification.status !== "pending" ? "disabled" : ""}>
+            <i class="fas fa-check"></i> Approve
+          </button>
+          <button class="reject-btn" data-id="${request.id}" ${request.verification.status !== "pending" ? "disabled" : ""}>
+            <i class="fas fa-times"></i> Reject
+          </button>
+        </div>
+      `
+
+      // Add event listener to the card
+      card.addEventListener("click", (e) => {
+        // Don't trigger if clicking on a button
+        if (e.target.tagName === "BUTTON" || e.target.parentElement.tagName === "BUTTON") {
+          return
+        }
+
+        showVerificationDetail(request.id)
+      })
+
+      // Add event listeners to buttons
+      const approveBtn = card.querySelector(".approve-btn")
+      const rejectBtn = card.querySelector(".reject-btn")
+
+      if (approveBtn) {
+        approveBtn.addEventListener("click", (e) => {
+          e.stopPropagation() // Prevent card click
+          handleVerificationAction(request.id, "verified")
+        })
+      }
+
+      if (rejectBtn) {
+        rejectBtn.addEventListener("click", (e) => {
+          e.stopPropagation() // Prevent card click
+          if (
+            confirm(`Are you sure you want to reject ${request.name}'s verification? This will DELETE their account.`)
+          ) {
+            handleVerificationAction(request.id, "rejected")
+          }
+        })
+      }
+
+      container.appendChild(card)
+    })
+  }
+
+  // Show verification detail
+  const showVerificationDetail = (id) => {
+    // Find the verification request
+    const request = verificationRequests.find((r) => r.id === id)
+    if (!request) return
+
+    // Get the detail view container
+    const detailView = document.getElementById("verification-detail-view")
+    if (!detailView) return
+
+    // Format timestamp
+    const timestamp = request.verification.timestamp
+      ? request.verification.timestamp.toDate().toLocaleString()
+      : "Unknown"
+
+    // Create detail view HTML with improved UI
+    detailView.innerHTML = `
+      <div class="verification-detail-header">
+        <div class="verification-detail-user">
+          <img src="${request.photoURL || "images/default-avatar.png"}" alt="${request.name}" class="verification-detail-photo" onerror="this.src='images/default-avatar.png'">
+          <div class="verification-detail-info">
+            <h3>${request.name}</h3>
+            <p>ID: ${request.id}</p>
+            <p>Email: ${request.email}</p>
+            <p>Phone: ${request.phone || "No phone"}</p>
+          </div>
+        </div>
+        <div class="verification-detail-status ${request.verification.status}">
+          ${request.verification.status}
+        </div>
       </div>
-    </div>
-    <div class="verification-photo-container">
-      <img src="${verificationPhotoURL}" alt="Verification photo" class="verification-photo" onerror="this.src='/images/verification-pose.png'">
-    </div>
-    <div class="verification-actions">
-      <button class="btn approve-btn" data-user-id="${userId}">
-        <i class="fas fa-check"></i> Approve
-      </button>
-      <button class="btn reject-btn" data-user-id="${userId}">
-        <i class="fas fa-times"></i> Reject
-      </button>
-    </div>
-  `
+      
+      <div class="verification-detail-content">
+        <div class="user-additional-info">
+          <p><strong>Age:</strong> ${request.age || "Not specified"}</p>
+          <p><strong>Gender:</strong> ${request.gender || "Not specified"}</p>
+          <p><strong>Submitted:</strong> ${timestamp}</p>
+          <p><strong>Bio:</strong> ${request.bio || "No bio"}</p>
+        </div>
+        
+        <div class="verification-photos">
+          <div class="verification-photo-card">
+            <img src="${request.verification.photoURL || "images/verification-pose.png"}" alt="Verification photo" onerror="this.src='images/verification-pose.png'">
+            <div class="verification-photo-label">Verification Photo</div>
+          </div>
+          <div class="verification-photo-card">
+            <img src="${request.photoURL || "images/default-avatar.png"}" alt="Profile photo" onerror="this.src='images/default-avatar.png'">
+            <div class="verification-photo-label">Profile Photo</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="verification-detail-actions">
+        <button class="approve-btn" id="detail-approve-btn" data-id="${request.id}" ${request.verification.status !== "pending" ? "disabled" : ""}>
+          <i class="fas fa-check"></i> Approve Verification
+        </button>
+        <button class="reject-btn" id="detail-reject-btn" data-id="${request.id}" ${request.verification.status !== "pending" ? "disabled" : ""}>
+          <i class="fas fa-times"></i> Reject & Delete Account
+        </button>
+        <button class="close-btn" id="detail-close-btn">
+          <i class="fas fa-arrow-left"></i> Back to List
+        </button>
+      </div>
+    `
 
-    // Add event listeners for approve and reject buttons
-    const approveBtn = card.querySelector(".approve-btn")
-    const rejectBtn = card.querySelector(".reject-btn")
+    // Add event listeners to buttons
+    const approveBtn = document.getElementById("detail-approve-btn")
+    const rejectBtn = document.getElementById("detail-reject-btn")
+    const closeBtn = document.getElementById("detail-close-btn")
 
     if (approveBtn) {
-      approveBtn.addEventListener("click", (e) => {
-        e.preventDefault()
-        handleVerificationAction(userId, "verified", verificationPhotoURL)
+      approveBtn.addEventListener("click", () => {
+        handleVerificationAction(request.id, "verified")
       })
     }
 
     if (rejectBtn) {
-      rejectBtn.addEventListener("click", (e) => {
-        e.preventDefault()
-        const confirmed = confirm(
-          `Are you sure you want to reject ${name}'s verification? This will DELETE their account.`,
-        )
-        if (confirmed) {
-          handleVerificationAction(userId, "rejected", verificationPhotoURL)
+      rejectBtn.addEventListener("click", () => {
+        if (
+          confirm(`Are you sure you want to reject ${request.name}'s verification? This will DELETE their account.`)
+        ) {
+          handleVerificationAction(request.id, "rejected")
         }
       })
     }
 
-    return card
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => {
+        detailView.style.display = "none"
+      })
+    }
+
+    // Show the detail view
+    detailView.style.display = "block"
+
+    // Scroll to the detail view
+    detailView.scrollIntoView({ behavior: "smooth" })
   }
 
   // Handle verification action (approve or reject)
-  const handleVerificationAction = async (userId, status, photoURL) => {
+  const handleVerificationAction = async (userId, status) => {
     try {
-      // Action is now confirmed in the button click handler
-      const action = status === "verified" ? "approve" : "reject & delete account"
+      showLoadingOverlay()
 
-      // Get user data to show in notifications
+      // Get user data
       const userDoc = await db.collection("users").doc(userId).get()
+
+      if (!userDoc.exists) {
+        showError("User not found")
+        hideLoadingOverlay()
+        return
+      }
+
       const userData = userDoc.data()
       const userName = userData.name || "Unknown User"
+      const photoURL = userData.verification?.photoURL
 
-      // Update user document
       if (status === "verified") {
+        // Approve the user
         await db.collection("users").doc(userId).update({
           "verification.status": status,
           "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
@@ -976,14 +1747,9 @@ const adminModule = (() => {
           verified: true,
         })
 
-        // Show success notification
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification(`Verification for ${userName} approved successfully!`, "success")
-        } else {
-          alert(`Verification for ${userName} approved successfully!`)
-        }
+        showSuccess(`Verification for ${userName} approved successfully!`)
       } else if (status === "rejected") {
-        // Log rejection in a separate collection
+        // Log the rejection in a separate collection for audit purposes
         await db
           .collection("rejectedUsers")
           .doc(userId)
@@ -994,146 +1760,43 @@ const adminModule = (() => {
             originalId: userId,
           })
 
-        // Mark for deletion (for a Cloud Function to handle)
-        await db.collection("users").doc(userId).update({
-          pendingDeletion: true,
-          deletionRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          deletionRequestedBy: auth.currentUser.uid,
-        })
-
-        // Delete from Firestore
+        // Delete the user document
         await db.collection("users").doc(userId).delete()
 
-        // Show success notification
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification(`User ${userName} rejected and account deleted!`, "success")
-        } else {
-          alert(`User ${userName} rejected and account deleted!`)
-        }
+        showSuccess(`User ${userName} rejected and account deleted!`)
       }
 
       // Delete verification photo from storage
       if (photoURL && storage) {
         try {
-          // Extract the path from the URL
           const storageRef = storage.refFromURL(photoURL)
           await storageRef.delete()
           console.log(`Verification photo deleted: ${photoURL}`)
         } catch (deleteError) {
           console.error("Error deleting verification photo:", deleteError)
+          // Continue anyway, this is not critical
         }
+      }
+
+      // Hide detail view if open
+      const detailView = document.getElementById("verification-detail-view")
+      if (detailView) {
+        detailView.style.display = "none"
       }
 
       // Reload verification requests
-      loadVerificationRequests("pending")
+      const filter = document.getElementById("verification-filter").value
+      loadVerificationRequests(filter)
 
       // Reload dashboard data
       loadDashboardData()
+
+      hideLoadingOverlay()
     } catch (error) {
       console.error(`Error ${status === "verified" ? "approving" : "rejecting"} verification:`, error)
+      hideLoadingOverlay()
 
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification(
-          `Error ${status === "verified" ? "approving" : "rejecting"} verification: ${error.message}`,
-          "error",
-        )
-      } else {
-        alert(`Error ${status === "verified" ? "approving" : "rejecting"} verification. Please try again.`)
-      }
-    }
-  }
-
-  // Select verification
-  const selectVerification = (id) => {
-    // Find verification request
-    const request = verificationRequests.find((r) => r.id === id)
-    if (!request) return
-
-    // Set selected verification
-    selectedVerification = request
-
-    // Render detail view
-    const verificationDetail = document.getElementById("verification-detail")
-    if (!verificationDetail) return
-
-    const timestamp = request.verification.timestamp
-      ? request.verification.timestamp.toDate().toLocaleString()
-      : "Unknown"
-
-    // Get additional user details
-    const email = request.email || "No Email"
-    const phone = request.phone || "No Phone"
-    const bio = request.bio || "No Bio"
-    const age = request.age || "Unknown Age"
-    const gender = request.gender || "Not Specified"
-
-    verificationDetail.innerHTML = `
-    <div class="verification-detail-header">
-      <div class="verification-detail-user">
-        <img src="${request.photoURL || "/images/default-avatar.png"}" alt="${request.name}" class="verification-detail-photo" onerror="this.src='/images/default-avatar.png'">
-        <div class="verification-detail-info">
-          <h3>${request.name}</h3>
-          <p>ID: ${request.id}</p>
-          <p>Email: ${email}</p>
-          <p>Phone: ${phone}</p>
-        </div>
-      </div>
-      <div class="verification-detail-status ${request.verification.status}">
-        ${request.verification.status}
-      </div>
-    </div>
-    
-    <div class="verification-detail-content">
-      <div class="user-additional-info">
-        <p><strong>Age:</strong> ${age}</p>
-        <p><strong>Gender:</strong> ${gender}</p>
-        <p><strong>Bio:</strong> ${bio}</p>
-        <p><strong>Submitted:</strong> ${timestamp}</p>
-      </div>
-      
-      <div class="verification-photos">
-        <div class="verification-photo">
-          <img src="${request.verification.photoURL || "/images/verification-pose.png"}" alt="Verification photo" onerror="this.src='/images/verification-pose.png'">
-          <p class="verification-photo-label">Verification Photo</p>
-        </div>
-        <div class="verification-photo">
-          <img src="${request.photoURL || "/images/default-avatar.png"}" alt="Profile photo" class="verification-detail-photo" onerror="this.src='/images/default-avatar.png'">
-          <p class="verification-photo-label">Profile Photo</p>
-        </div>
-      </div>
-    </div>
-    
-    <div class="verification-actions">
-      <button class="approve-btn" id="approve-verification">
-        <i class="fas fa-check"></i> Approve
-      </button>
-      <button class="reject-btn" id="reject-verification">
-        <i class="fas fa-times"></i> Reject & Delete Account
-      </button>
-    </div>
-  `
-
-    // Add event listeners
-    const approveBtn = document.getElementById("approve-verification")
-    const rejectBtn = document.getElementById("reject-verification")
-
-    if (approveBtn) {
-      approveBtn.addEventListener("click", (e) => {
-        e.preventDefault()
-        updateVerificationStatus("verified")
-      })
-    }
-
-    if (rejectBtn) {
-      rejectBtn.addEventListener("click", (e) => {
-        e.preventDefault()
-        const confirmed = confirm(
-          `Are you sure you want to reject ${request.name}'s verification? This will DELETE their account.`,
-        )
-        if (confirmed) {
-          updateVerificationStatus("rejected")
-        }
-      })
+      showError(`Error ${status === "verified" ? "approving" : "rejecting"} verification: ${error.message}`)
     }
   }
 
@@ -1279,14 +1942,14 @@ const adminModule = (() => {
           <td>${user.id}</td>
           <td>
             <div style="display: flex; align-items: center;">
-              <img src="${user.photoURL || "images/default-avatar.png"}" alt="${user.name}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;">
+              <img src="${user.photoURL || "images/default-avatar.png"}" alt="${user.name}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px;" onerror="this.src='images/default-avatar.png'">
               ${user.name}
             </div>
           </td>
           <td>${user.email}</td>
           <td>${createdAt}</td>
           <td><span class="user-status ${user.status}">${user.status}</span></td>
-          <td class="user-verified">${user.verified ? '<i class="fas fa-check-circle"></i>' : ""}</td>
+          <td>${user.verified ? '<i class="fas fa-check-circle"></i>' : ""}</td>
           <td class="user-actions">
             <button class="user-action-btn" data-action="view" data-id="${user.id}">
               <i class="fas fa-eye"></i>
@@ -1809,7 +2472,12 @@ const adminModule = (() => {
   const loadAdminUsers = async () => {
     try {
       // Hardcoded admin UIDs
-      const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
+      const adminUIDs = [
+        "Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1",
+        "U60X51daggVxsyFzJ01u2LBlLyK2",
+        "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3",
+        "TgxwPG9e8NZZXMlMtNpOlmhDwLA2",
+      ]
 
       const adminList = document.getElementById("admin-list")
       if (!adminList) return
@@ -1885,7 +2553,12 @@ const adminModule = (() => {
       const userId = userDoc.id
 
       // List of admin UIDs - only these users can be admins
-      const adminUIDs = ["Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1", "U60X51daggVxsyFzJ01u2LBlLyK2"]
+      const adminUIDs = [
+        "Dhx2L7VTO1ZeF4Ry2y2nX4cmLMo1",
+        "U60X51daggVxsyFzJ01u2LBlLyK2",
+        "lXnIV6QfuCWJOPJfVxJ9xqvUg2J3",
+        "TgxwPG9e8NZZXMlMtNpOlmhDwLA2",
+      ]
 
       // Check if user is already in the admin list
       if (adminUIDs.includes(userId)) {
@@ -1984,113 +2657,6 @@ const adminModule = (() => {
 
       if (window.utils && window.utils.showNotification) {
         window.utils.showNotification("Error saving system settings: " + error.message, "error")
-      }
-    }
-  }
-
-  // Update verification status
-  const updateVerificationStatus = async (status) => {
-    try {
-      if (!selectedVerification) return
-
-      // Show loading state
-      const approveBtn = document.getElementById("approve-verification")
-      const rejectBtn = document.getElementById("reject-verification")
-
-      if (approveBtn) approveBtn.disabled = true
-      if (rejectBtn) rejectBtn.disabled = true
-
-      // Get the verification photo URL before updating
-      const photoURL = selectedVerification.verification.photoURL
-      const userId = selectedVerification.id
-
-      if (status === "verified") {
-        // Approve the user
-        await db.collection("users").doc(userId).update({
-          "verification.status": status,
-          "verification.reviewedAt": firebase.firestore.FieldValue.serverTimestamp(),
-          "verification.reviewedBy": auth.currentUser.uid,
-          // Remove the photoURL if approved
-          "verification.photoURL": firebase.firestore.FieldValue.delete(),
-          // Update verified status
-          verified: true,
-        })
-
-        // Show notification
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification("Verification approved successfully", "success")
-        }
-      } else if (status === "rejected") {
-        // For rejection, we'll delete the entire user account
-
-        // First, get all user data for record keeping
-        const userDoc = await db.collection("users").doc(userId).get()
-        const userData = userDoc.data()
-
-        // Log the rejection in a separate collection for audit purposes
-        await db
-          .collection("rejectedUsers")
-          .doc(userId)
-          .set({
-            ...userData,
-            rejectedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            rejectedBy: auth.currentUser.uid,
-            originalId: userId,
-          })
-
-        // Delete the user from authentication (requires Cloud Function or Admin SDK)
-        // Since we can't use Admin SDK directly in client code, we'll add a special flag
-        // and implement a Cloud Function to handle the actual auth deletion
-        await db.collection("users").doc(userId).update({
-          pendingDeletion: true,
-          deletionRequestedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          deletionRequestedBy: auth.currentUser.uid,
-        })
-
-        // Then delete the user document from Firestore
-        await db.collection("users").doc(userId).delete()
-
-        // Show notification
-        if (window.utils && window.utils.showNotification) {
-          window.utils.showNotification("User verification rejected and account deleted", "success")
-        }
-      }
-
-      // Delete the verification photo from storage
-      if (photoURL && storage) {
-        try {
-          // Extract the path from the URL
-          const storageRef = storage.refFromURL(photoURL)
-          await storageRef.delete()
-          console.log("Verification photo deleted successfully")
-        } catch (deleteError) {
-          console.error("Error deleting verification photo:", deleteError)
-          // Continue anyway, this is not critical
-        }
-      }
-
-      // Reload verification count and dashboard data
-      loadDashboardData()
-
-      // Load verification requests again to refresh the list
-      const filter = document.getElementById("verification-filter")?.value || "pending"
-      loadVerificationRequests(filter)
-
-      // Re-enable buttons
-      if (approveBtn) approveBtn.disabled = false
-      if (rejectBtn) rejectBtn.disabled = false
-    } catch (error) {
-      console.error("Error updating verification status:", error)
-
-      // Re-enable buttons
-      const approveBtn = document.getElementById("approve-verification")
-      const rejectBtn = document.getElementById("reject-verification")
-
-      if (approveBtn) approveBtn.disabled = false
-      if (rejectBtn) rejectBtn.disabled = false
-
-      if (window.utils && window.utils.showNotification) {
-        window.utils.showNotification("Error updating verification status: " + error.message, "error")
       }
     }
   }
