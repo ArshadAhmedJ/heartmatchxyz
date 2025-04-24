@@ -316,8 +316,8 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.9);
   color: #ff6b6b;
@@ -326,14 +326,16 @@
   justify-content: center;
   border: none;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 1rem;
   z-index: 2;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .remove-photo-btn:hover {
   background-color: #ff6b6b;
   color: white;
+  transform: scale(1.1);
 }
 
 .photo-upload-loading {

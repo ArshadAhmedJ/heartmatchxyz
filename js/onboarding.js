@@ -128,7 +128,12 @@ window.onboardingModule = (() => {
       photoPreviewContainer.appendChild(uploadBox)
 
       // Add click event to open file explorer
-      uploadBox.addEventListener("click", () => {
+      uploadBox.addEventListener("click", (e) => {
+        // Don't trigger if clicking on the remove button
+        if (e.target.closest(".remove-photo-btn")) {
+          return
+        }
+
         const input = uploadBox.querySelector(".photo-upload-input")
         if (input) {
           input.click()
@@ -575,7 +580,7 @@ window.onboardingModule = (() => {
       try {
         // Create storage reference - using the correct path according to security rules
         const storageRef = firebase.storage().ref()
-        const fileRef = storageRef.child(`profile_images/${currentUser.uid}/${Date.now()}_${file.name}`)
+        const fileRef = storageRef.child(`users/${currentUser.uid}/photos/${Date.now()}_${file.name}`)
 
         // Compress image before uploading
         const compressedFile = await compressImage(file)
