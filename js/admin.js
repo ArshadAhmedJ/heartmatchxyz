@@ -616,6 +616,212 @@ const adminModule = (() => {
       document.head.appendChild(style)
     }
 
+    // Add styles for the matches section if they don't exist
+    if (!document.getElementById("admin-matches-styles")) {
+      const style = document.createElement("style")
+      style.id = "admin-matches-styles"
+      style.innerHTML = `
+    /* Matches UI Improvements */
+    .match-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin-bottom: 20px;
+    }
+    
+    .match-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .match-header {
+      padding: 15px;
+      background-color: #ff4b7d;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .match-title {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .match-timestamp {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+    
+    .match-users {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    
+    .match-user {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .match-heart {
+      font-size: 24px;
+      color: #ff4b7d;
+      margin: 0 15px;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    
+    .match-user-photo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ff4b7d;
+      margin-bottom: 10px;
+    }
+    
+    .match-user-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .match-user-info {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    
+    .match-user-id {
+      color: #999;
+      font-size: 12px;
+    }
+    
+    .match-messages {
+      padding: 15px;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .match-messages-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .match-messages-title {
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .match-messages-count {
+      background-color: #ff4b7d;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    
+    .match-messages-preview {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .match-actions {
+      display: flex;
+      padding: 15px;
+      gap: 10px;
+    }
+    
+    .match-action-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .match-action-btn.view {
+      background-color: #2196F3;
+      color: white;
+    }
+    
+    .match-action-btn.view:hover {
+      background-color: #1976D2;
+    }
+    
+    .match-action-btn.delete {
+      background-color: #F44336;
+      color: white;
+    }
+    
+    .match-action-btn.delete:hover {
+      background-color: #D32F2F;
+    }
+    
+    #matches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    #matches-section .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    #matches-section .search-container {
+      display: flex;
+      gap: 10px;
+    }
+    
+    #match-search {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      min-width: 250px;
+    }
+    
+    #match-search-btn, #refresh-matches {
+      padding: 8px 15px;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background-color 0.3s ease;
+    }
+    
+    #match-search-btn:hover, #refresh-matches:hover {
+      background-color: #e0e0e0;
+    }
+  `
+      document.head.appendChild(style)
+    }
+
     // Show loading overlay
     showLoadingOverlay()
 
@@ -624,6 +830,41 @@ const adminModule = (() => {
 
     // Set a timeout to check if we're stuck loading
     setTimeout(checkIfStuckLoading, 10000)
+
+    // Add this to the init function to ensure the matches section is properly set up
+    // Find the init function and add this code inside it, before the console.log("Admin module initialized") line
+    if (document.getElementById("matches-section")) {
+      // Create the matches section structure if it doesn't exist
+      if (!document.getElementById("matches-grid")) {
+        const matchesSection = document.getElementById("matches-section")
+        matchesSection.innerHTML = `
+      <div class="section-header">
+        <h2>User Matches</h2>
+        <div class="search-container">
+          <input type="text" id="match-search" placeholder="Search by user name...">
+          <button id="match-search-btn">
+            <i class="fas fa-search"></i> Search
+          </button>
+          <button id="refresh-matches">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+        </div>
+      </div>
+      
+      <div id="matches-loading" class="empty-state">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Loading matches...</p>
+      </div>
+      
+      <div id="matches-grid" style="display: none;"></div>
+      
+      <div id="matches-empty" class="empty-state" style="display: none;">
+        <i class="fas fa-heart-broken"></i>
+        <p>No matches found</p>
+      </div>
+    `
+      }
+    }
 
     console.log("Admin module initialized")
   }
@@ -2198,6 +2439,10 @@ const adminModule = (() => {
       if (matchesSnapshot.empty) {
         document.getElementById("matches-loading").style.display = "none"
         document.getElementById("matches-empty").style.display = "flex"
+        document.getElementById("matches-empty").innerHTML = `
+        <i class="fas fa-heart-broken"></i>
+        <p>No matches found in the database</p>
+      `
         hideLoadingOverlay()
         return
       }
@@ -2315,27 +2560,35 @@ const adminModule = (() => {
       // Format timestamp
       const timestamp = match.createdAt ? match.createdAt.toDate().toLocaleString() : "Unknown"
 
+      // Format match title
+      const matchTitle = `${match.user1.name} and ${match.user2.name} are a match!`
+
       // Create match card HTML
       matchCard.innerHTML = `
       <div class="match-header">
-        <div class="match-id">ID: ${match.id}</div>
-        <div class="match-timestamp">${timestamp}</div>
+        <div class="match-title">${matchTitle}</div>
+        <div class="match-timestamp"><i class="far fa-clock"></i> ${timestamp}</div>
       </div>
       <div class="match-users">
         <div class="match-user">
           <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
           <div class="match-user-name">${match.user1.name}</div>
           <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
+          <div class="match-user-id">ID: ${match.user1.id}</div>
+        </div>
+        <div class="match-heart">
+          <i class="fas fa-heart"></i>
         </div>
         <div class="match-user">
           <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
           <div class="match-user-name">${match.user2.name}</div>
           <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
+          <div class="match-user-id">ID: ${match.user2.id}</div>
         </div>
       </div>
       <div class="match-messages">
         <div class="match-messages-header">
-          <div class="match-messages-title">Messages</div>
+          <div class="match-messages-title"><i class="far fa-comment-dots"></i> Messages</div>
           <div class="match-messages-count">${match.messageCount}</div>
         </div>
         <div class="match-messages-preview">
@@ -2359,7 +2612,7 @@ const adminModule = (() => {
       if (viewBtn) {
         viewBtn.addEventListener("click", () => {
           // In a real app, this would open a modal with match details
-          alert(`View match details: ${match.id}\nUsers: ${match.user1.name} and ${match.user2.name}`)
+          alert(`Match Details:\n${matchTitle}\nCreated: ${timestamp}\nMessages: ${match.messageCount}`)
         })
       }
 
