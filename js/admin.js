@@ -1,3 +1,4 @@
+import { Chart } from "@/components/ui/chart"
 // Ad min Dashboard Module
 const adminModule = (() => {
   // Firebase services
@@ -818,6 +819,32 @@ const adminModule = (() => {
     #match-search-btn:hover, #refresh-matches:hover {
       background-color: #e0e0e0;
     }
+
+    .match-status {
+      padding: 10px 15px;
+      display: flex;
+      justify-content: center;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #eee;
+    }
+
+    .match-status-badge {
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .match-status-badge.confirmed {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .match-status-badge.pending {
+      background-color: #FFC107;
+      color: #333;
+    }
   `
       document.head.appendChild(style)
     }
@@ -864,6 +891,20 @@ const adminModule = (() => {
       </div>
     `
       }
+    }
+
+    // Add debugging for matches section
+    if (document.getElementById("matches-section")) {
+      console.log("Matches section found in DOM")
+    } else {
+      console.error("Matches section not found in DOM")
+    }
+
+    // Check if the matches grid exists
+    if (document.getElementById("matches-grid")) {
+      console.log("Matches grid found in DOM")
+    } else {
+      console.log("Matches grid not found, will create it")
     }
 
     console.log("Admin module initialized")
@@ -2433,7 +2474,7 @@ const adminModule = (() => {
       document.getElementById("matches-empty").style.display = "none"
 
       // Get matches from Firestore
-      const matchesSnapshot = await db.collection("matches").orderBy("createdAt", "desc").get()
+      const matchesSnapshot = await db.collection("matches").orderBy("timestamp", "desc").get()
 
       // Check if there are any matches
       if (matchesSnapshot.empty) {
@@ -2447,6 +2488,8 @@ const adminModule = (() => {
         return
       }
 
+      console.log(`Found ${matchesSnapshot.size} matches in the database`)
+
       // Process matches
       const matchesData = []
       const matchPromises = []
@@ -2454,17 +2497,30 @@ const adminModule = (() => {
       matchesSnapshot.forEach((doc) => {
         const matchData = doc.data()
 
-        // Get user data for both users in the match
-        const user1Promise = db.collection("users").doc(matchData.user1Id).get()
-        const user2Promise = db.collection("users").doc(matchData.user2Id).get()
+        // Check if the match has the expected structure
+        if (!matchData.users || !Array.isArray(matchData.users) || matchData.users.length < 2) {
+          console.warn(`Match ${doc.id} has invalid structure:`, matchData)
+          return // Skip this match
+        }
 
-        // Get message count
+        // Get user data for both users in the match
+        const user1Promise = db.collection("users").doc(matchData.users[0]).get()
+        const user2Promise = db.collection("users").doc(matchData.users[1]).get()
+
+        // Get message count - assuming messages are stored in a 'messages' subcollection
         const messagesPromise = db
           .collection("messages")
           .where("matchId", "==", doc.id)
           .get()
           .then((snapshot) => snapshot.size)
-          .catch(() => 0)
+          .catch(() => {
+            // If there's an error, try to estimate from unreadCount if available
+            if (matchData.unreadCount) {
+              const totalUnread = Object.values(matchData.unreadCount).reduce((sum, count) => sum + count, 0)
+              return totalUnread > 0 ? totalUnread : 0
+            }
+            return 0
+          })
 
         // Add all promises to the array
         matchPromises.push(
@@ -2476,20 +2532,22 @@ const adminModule = (() => {
               matchesData.push({
                 id: doc.id,
                 user1: {
-                  id: matchData.user1Id,
+                  id: matchData.users[0],
                   name: user1Data.name || "Unknown User",
                   photoURL: user1Data.photoURL || "",
                   age: user1Data.age || "",
                   gender: user1Data.gender || "",
                 },
                 user2: {
-                  id: matchData.user2Id,
+                  id: matchData.users[1],
                   name: user2Data.name || "Unknown User",
                   photoURL: user2Data.photoURL || "",
                   age: user2Data.age || "",
                   gender: user2Data.gender || "",
                 },
-                createdAt: matchData.createdAt,
+                createdAt: matchData.timestamp || null,
+                lastMessageAt: matchData.lastMessageTimestamp || null,
+                confirmed: matchData.confirmed || false,
                 messageCount: messageCount,
               })
             })
@@ -2501,6 +2559,8 @@ const adminModule = (() => {
 
       // Wait for all promises to resolve
       await Promise.all(matchPromises)
+
+      console.log(`Successfully processed ${matchesData.length} matches`)
 
       // Sort matches by creation date (newest first)
       matchesData.sort((a, b) => {
@@ -2545,6 +2605,8 @@ const adminModule = (() => {
       return
     }
 
+    console.log(`Rendering ${matchesData.length} matches`)
+
     // Hide loading and empty states
     document.getElementById("matches-loading").style.display = "none"
     document.getElementById("matches-empty").style.display = "none"
@@ -2559,6 +2621,7 @@ const adminModule = (() => {
 
       // Format timestamp
       const timestamp = match.createdAt ? match.createdAt.toDate().toLocaleString() : "Unknown"
+      const lastMessageTime = match.lastMessageAt ? match.lastMessageAt.toDate().toLocaleString() : "No messages yet"
 
       // Format match title
       const matchTitle = `${match.user1.name} and ${match.user2.name} are a match!`
@@ -2586,13 +2649,22 @@ const adminModule = (() => {
           <div class="match-user-id">ID: ${match.user2.id}</div>
         </div>
       </div>
+      <div class="match-status">
+        <div class="match-status-badge ${match.confirmed ? "confirmed" : "pending"}">
+          ${match.confirmed ? "Confirmed Match" : "Pending Confirmation"}
+        </div>
+      </div>
       <div class="match-messages">
         <div class="match-messages-header">
           <div class="match-messages-title"><i class="far fa-comment-dots"></i> Messages</div>
           <div class="match-messages-count">${match.messageCount}</div>
         </div>
         <div class="match-messages-preview">
-          ${match.messageCount > 0 ? `${match.messageCount} messages exchanged` : "No messages yet"}
+          ${
+            match.messageCount > 0
+              ? `${match.messageCount} messages exchanged<br><small>Last message: ${lastMessageTime}</small>`
+              : "No messages yet"
+          }
         </div>
       </div>
       <div class="match-actions">
@@ -2612,7 +2684,9 @@ const adminModule = (() => {
       if (viewBtn) {
         viewBtn.addEventListener("click", () => {
           // In a real app, this would open a modal with match details
-          alert(`Match Details:\n${matchTitle}\nCreated: ${timestamp}\nMessages: ${match.messageCount}`)
+          alert(
+            `Match Details:\n${matchTitle}\nCreated: ${timestamp}\nMessages: ${match.messageCount}\nStatus: ${match.confirmed ? "Confirmed" : "Pending"}`,
+          )
         })
       }
 
