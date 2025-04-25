@@ -1,4 +1,3 @@
-import { Chart } from "@/components/ui/chart"
 // Ad min Dashboard Module
 const adminModule = (() => {
   // Firebase services
