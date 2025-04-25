@@ -621,237 +621,693 @@ const adminModule = (() => {
       const style = document.createElement("style")
       style.id = "admin-matches-styles"
       style.innerHTML = `
-    /* Matches UI Improvements */
-    .match-card {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      margin-bottom: 20px;
-    }
-    
-    .match-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    }
-    
-    .match-header {
-      padding: 15px;
-      background-color: #ff4b7d;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .match-title {
-      font-weight: bold;
-      font-size: 18px;
-    }
-    
-    .match-timestamp {
-      font-size: 14px;
-      opacity: 0.8;
-    }
-    
-    .match-users {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    
-    .match-user {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    
-    .match-heart {
-      font-size: 24px;
-      color: #ff4b7d;
-      margin: 0 15px;
-      animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-      100% { transform: scale(1); }
-    }
-    
-    .match-user-photo {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid #ff4b7d;
-      margin-bottom: 10px;
-    }
-    
-    .match-user-name {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    
-    .match-user-info {
-      color: #666;
-      font-size: 14px;
-      margin-bottom: 5px;
-    }
+/* Enhanced Matches UI */
+.matches-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  background-color: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
 
-    .match-user-location {
-      color: #666;
-      font-size: 13px;
-      margin-bottom: 3px;
-      font-style: italic;
-    }
-    
-    .match-user-id {
-      color: #999;
-      font-size: 12px;
-    }
-    
-    .match-messages {
-      padding: 15px;
-      border-top: 1px solid #eee;
-      border-bottom: 1px solid #eee;
-    }
-    
-    .match-messages-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    
-    .match-messages-title {
-      font-weight: bold;
-      color: #333;
-    }
-    
-    .match-messages-count {
-      background-color: #ff4b7d;
-      color: white;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 12px;
-    }
-    
-    .match-messages-preview {
-      color: #666;
-      font-size: 14px;
-    }
-    
-    .match-actions {
-      display: flex;
-      padding: 15px;
-      gap: 10px;
-    }
-    
-    .match-action-btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: background-color 0.3s ease;
-    }
-    
-    .match-action-btn.view {
-      background-color: #2196F3;
-      color: white;
-    }
-    
-    .match-action-btn.view:hover {
-      background-color: #1976D2;
-    }
-    
-    .match-action-btn.delete {
-      background-color: #F44336;
-      color: white;
-    }
-    
-    .match-action-btn.delete:hover {
-      background-color: #D32F2F;
-    }
-    
-    #matches-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-    
-    #matches-section .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    
-    #matches-section .search-container {
-      display: flex;
-      gap: 10px;
-    }
-    
-    #match-search {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      min-width: 250px;
-    }
-    
-    #match-search-btn, #refresh-matches {
-      padding: 8px 15px;
-      background-color: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: background-color 0.3s ease;
-    }
-    
-    #match-search-btn:hover, #refresh-matches:hover {
-      background-color: #e0e0e0;
-    }
+.matches-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-    .match-status {
-      padding: 10px 15px;
-      display: flex;
-      justify-content: center;
-      background-color: #f9f9f9;
-      border-bottom: 1px solid #eee;
-    }
+.matches-filter-label {
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+}
 
-    .match-status-badge {
-      padding: 5px 15px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 500;
-      text-align: center;
-    }
+.matches-filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: white;
+  min-width: 150px;
+}
 
-    .match-status-badge.confirmed {
-      background-color: #4CAF50;
-      color: white;
-    }
+#matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
 
-    .match-status-badge.pending {
-      background-color: #FFC107;
-      color: #333;
-    }
-  `
+.match-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.match-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+.match-header {
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.match-header::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+.match-title {
+  font-weight: 600;
+  font-size: 18px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  max-width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match-timestamp {
+  font-size: 13px;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.match-timestamp i {
+  font-size: 14px;
+}
+
+.match-users {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 20px;
+  background-color: #f9f9f9;
+  position: relative;
+}
+
+.match-user {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.match-heart-container {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+}
+
+.match-heart-bg {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 75, 125, 0.1);
+  border-radius: 50%;
+}
+
+.match-heart {
+  font-size: 24px;
+  color: #ff4b7d;
+  animation: pulse 1.5s infinite;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(255, 75, 125, 0.3));
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.match-user-photo-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 15px;
+}
+
+.match-user-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.match-card:hover .match-user-photo {
+  transform: scale(1.05);
+}
+
+.match-user-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.match-user-info {
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.match-user-info i {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.match-user-location {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 5px;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.match-user-location i {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.match-user-id {
+  color: #999;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.match-status {
+  padding: 12px 15px;
+  display: flex;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #eee;
+}
+
+.match-status-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.match-status-badge.confirmed {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.match-status-badge.pending {
+  background-color: #FFC107;
+  color: #333;
+}
+
+.match-messages {
+  padding: 18px 20px;
+  border-bottom: 1px solid #eee;
+  background-color: white;
+}
+
+.match-messages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.match-messages-title {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.match-messages-count {
+  background-color: #ff4b7d;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(255, 75, 125, 0.2);
+}
+
+.match-messages-preview {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.match-actions {
+  display: flex;
+  padding: 18px 20px;
+  gap: 12px;
+  background-color: white;
+}
+
+.match-action-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.match-action-btn.view {
+  background-color: #2196F3;
+  color: white;
+}
+
+.match-action-btn.view:hover {
+  background-color: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+}
+
+.match-action-btn.delete {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #F44336;
+  border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.match-action-btn.delete:hover {
+  background-color: #F44336;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+  border-color: transparent;
+}
+
+.match-action-btn i {
+  font-size: 16px;
+}
+
+/* Match Detail Modal */
+.match-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.match-detail-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.match-detail-content {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+}
+
+.match-detail-modal.active .match-detail-content {
+  transform: translateY(0);
+}
+
+.match-detail-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.match-detail-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.match-detail-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.match-detail-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.match-detail-body {
+  padding: 20px;
+}
+
+.match-detail-section {
+  margin-bottom: 20px;
+}
+
+.match-detail-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.match-detail-section-title i {
+  color: #ff4b7d;
+}
+
+.match-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.match-detail-item {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.match-detail-item-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.match-detail-item-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.match-detail-users {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .match-detail-users {
+    grid-template-columns: 1fr;
+  }
+}
+
+.match-detail-user {
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.match-detail-user-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.match-detail-user-photo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+  border: 3px solid white;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.match-detail-user-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 18px;
+}
+
+.match-detail-user-info p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.match-detail-user-bio {
+  margin-bottom: 15px;
+  color: #555;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.match-detail-user-interests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.match-detail-interest {
+  background-color: rgba(255, 75, 125, 0.1);
+  color: #ff4b7d;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.match-detail-footer {
+  padding: 15px 20px;
+  background-color: #f5f5f5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #eee;
+}
+
+.match-detail-btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.match-detail-btn.primary {
+  background-color: #ff4b7d;
+  color: white;
+}
+
+.match-detail-btn.primary:hover {
+  background-color: #e91e63;
+}
+
+.match-detail-btn.secondary {
+  background-color: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.match-detail-btn.secondary:hover {
+  background-color: #eee;
+}
+
+/* Search and filters */
+#matches-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+#matches-section .search-container {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#match-search {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  min-width: 250px;
+  font-size: 14px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+#match-search:focus {
+  outline: none;
+  border-color: #ff4b7d;
+  box-shadow: 0 0 0 3px rgba(255, 75, 125, 0.2);
+}
+
+#match-search-btn, #refresh-matches {
+  padding: 10px 15px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+#match-search-btn:hover, #refresh-matches:hover {
+  background-color: #f9f9f9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#refresh-matches {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+#refresh-matches:hover {
+  background-color: #eee;
+}
+
+/* Empty state */
+#matches-empty {
+  background-color: white;
+  border-radius: 12px;
+  padding: 40px 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+#matches-empty i {
+  font-size: 60px;
+  color: #ff4b7d;
+  opacity: 0.5;
+  margin-bottom: 20px;
+}
+
+#matches-empty p {
+  font-size: 18px;
+  color: #555;
+}
+
+/* Loading state */
+#matches-loading {
+  background-color: white;
+  border-radius: 12px;
+  padding: 40px 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+#matches-loading i {
+  font-size: 60px;
+  color: #ff4b7d;
+  margin-bottom: 20px;
+}
+
+#matches-loading p {
+  font-size: 18px;
+  color: #555;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #matches-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .match-users {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .match-heart-container {
+    margin: 10px 0;
+  }
+  
+  .match-user {
+    width: 100%;
+  }
+  
+  .match-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .match-title {
+    max-width: 100%;
+  }
+}
+`
       document.head.appendChild(style)
     }
 
@@ -2646,10 +3102,81 @@ const adminModule = (() => {
     // Show matches grid
     matchesGrid.style.display = "grid"
 
+    // Add filter controls if they don't exist
+    if (!document.querySelector(".matches-controls")) {
+      const sectionHeader = document.querySelector("#matches-section .section-header")
+      const searchContainer = document.querySelector("#matches-section .search-container")
+
+      if (sectionHeader && searchContainer) {
+        const controlsDiv = document.createElement("div")
+        controlsDiv.className = "matches-controls"
+        controlsDiv.innerHTML = `
+        <div class="matches-filter">
+          <div class="matches-filter-label">Status:</div>
+          <select id="match-status-filter" class="matches-filter-select">
+            <option value="all">All Matches</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="matches-filter">
+          <div class="matches-filter-label">Sort by:</div>
+          <select id="match-sort-filter" class="matches-filter-select">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="messages">Most Messages</option>
+          </select>
+        </div>
+      `
+
+        // Insert after section header
+        sectionHeader.parentNode.insertBefore(controlsDiv, sectionHeader.nextSibling)
+
+        // Add event listeners to filters
+        document.getElementById("match-status-filter").addEventListener("change", filterMatches)
+        document.getElementById("match-sort-filter").addEventListener("change", sortMatches)
+      }
+    }
+
+    // Create a modal container for match details if it doesn't exist
+    if (!document.getElementById("match-detail-modal")) {
+      const modalDiv = document.createElement("div")
+      modalDiv.id = "match-detail-modal"
+      modalDiv.className = "match-detail-modal"
+      modalDiv.innerHTML = `
+      <div class="match-detail-content">
+        <div class="match-detail-header">
+          <div class="match-detail-title">Match Details</div>
+          <button class="match-detail-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="match-detail-body">
+          <!-- Content will be dynamically inserted here -->
+        </div>
+      </div>
+    `
+      document.body.appendChild(modalDiv)
+
+      // Add event listener to close button
+      document.querySelector(".match-detail-close").addEventListener("click", () => {
+        document.getElementById("match-detail-modal").classList.remove("active")
+      })
+
+      // Close modal when clicking outside content
+      document.getElementById("match-detail-modal").addEventListener("click", (e) => {
+        if (e.target === document.getElementById("match-detail-modal")) {
+          document.getElementById("match-detail-modal").classList.remove("active")
+        }
+      })
+    }
+
     // Render each match
     matchesData.forEach((match) => {
       const matchCard = document.createElement("div")
       matchCard.className = "match-card"
+      matchCard.setAttribute("data-id", match.id)
+      matchCard.setAttribute("data-status", match.confirmed ? "confirmed" : "pending")
+      matchCard.setAttribute("data-messages", match.messageCount)
+      matchCard.setAttribute("data-created", match.createdAt ? match.createdAt.toDate().getTime() : 0)
 
       // Format timestamp
       const timestamp = match.createdAt ? match.createdAt.toDate().toLocaleString() : "Unknown"
@@ -2672,25 +3199,33 @@ const adminModule = (() => {
       </div>
       <div class="match-users">
         <div class="match-user">
-          <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          <div class="match-user-photo-container">
+            <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          </div>
           <div class="match-user-name">${match.user1.name}</div>
-          <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
-          <div class="match-user-location">${match.user1.location || ""}</div>
+          <div class="match-user-info"><i class="fas fa-user"></i> ${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
+          <div class="match-user-location"><i class="fas fa-map-marker-alt"></i> ${match.user1.location || "Unknown location"}</div>
           <div class="match-user-id">ID: ${match.user1.id}</div>
         </div>
-        <div class="match-heart">
-          <i class="fas fa-heart"></i>
+        <div class="match-heart-container">
+          <div class="match-heart-bg"></div>
+          <div class="match-heart">
+            <i class="fas fa-heart"></i>
+          </div>
         </div>
         <div class="match-user">
-          <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          <div class="match-user-photo-container">
+            <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
+          </div>
           <div class="match-user-name">${match.user2.name}</div>
-          <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
-          <div class="match-user-location">${match.user2.location || ""}</div>
+          <div class="match-user-info"><i class="fas fa-user"></i> ${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
+          <div class="match-user-location"><i class="fas fa-map-marker-alt"></i> ${match.user2.location || "Unknown location"}</div>
           <div class="match-user-id">ID: ${match.user2.id}</div>
         </div>
       </div>
       <div class="match-status">
         <div class="match-status-badge ${match.confirmed ? "confirmed" : "pending"}">
+          <i class="fas ${match.confirmed ? "fa-check-circle" : "fa-clock"}"></i>
           ${match.confirmed ? "Confirmed Match" : "Pending Confirmation"}
         </div>
       </div>
@@ -2723,29 +3258,8 @@ const adminModule = (() => {
 
       if (viewBtn) {
         viewBtn.addEventListener("click", () => {
-          // Show detailed match information
-          const detailsHtml = `
-          <h3>${matchTitle}</h3>
-          <p><strong>Created:</strong> ${timestamp}</p>
-          <p><strong>Status:</strong> ${match.confirmed ? "Confirmed" : "Pending"}</p>
-          <p><strong>Messages:</strong> ${match.messageCount}</p>
-          
-          <h4>${match.user1.name}</h4>
-          <p><strong>Age:</strong> ${match.user1.age}</p>
-          <p><strong>Gender:</strong> ${match.user1.gender}</p>
-          <p><strong>Location:</strong> ${match.user1.location}</p>
-          <p><strong>Bio:</strong> ${match.user1.bio}</p>
-          <p><strong>Interests:</strong> ${formatInterests(match.user1.interests)}</p>
-          
-          <h4>${match.user2.name}</h4>
-          <p><strong>Age:</strong> ${match.user2.age}</p>
-          <p><strong>Gender:</strong> ${match.user2.gender}</p>
-          <p><strong>Location:</strong> ${match.user2.location}</p>
-          <p><strong>Bio:</strong> ${match.user2.bio}</p>
-          <p><strong>Interests:</strong> ${formatInterests(match.user2.interests)}</p>
-        `
-
-          alert(detailsHtml.replace(/<[^>]*>/g, ""))
+          // Show match details in modal
+          showMatchDetailModal(match)
         })
       }
 
@@ -2763,6 +3277,154 @@ const adminModule = (() => {
     })
   }
 
+  // Show match detail modal
+  const showMatchDetailModal = (match) => {
+    const modal = document.getElementById("match-detail-modal")
+    const modalBody = modal.querySelector(".match-detail-body")
+
+    // Format timestamp
+    const timestamp = match.createdAt ? match.createdAt.toDate().toLocaleString() : "Unknown"
+    const lastMessageTime = match.lastMessageAt ? match.lastMessageAt.toDate().toLocaleString() : "No messages yet"
+
+    // Format interests as comma-separated list
+    const formatInterests = (interests) => {
+      if (!interests || interests.length === 0) return []
+      return interests
+    }
+
+    // Create interests HTML
+    const createInterestsHTML = (interests) => {
+      return formatInterests(interests)
+        .map((interest) => `<div class="match-detail-interest">${interest}</div>`)
+        .join("")
+    }
+
+    // Set modal content
+    modalBody.innerHTML = `
+    <div class="match-detail-section">
+      <div class="match-detail-section-title"><i class="fas fa-info-circle"></i> Match Information</div>
+      <div class="match-detail-grid">
+        <div class="match-detail-item">
+          <div class="match-detail-item-label">Created</div>
+          <div class="match-detail-item-value">${timestamp}</div>
+        </div>
+        <div class="match-detail-item">
+          <div class="match-detail-item-label">Status</div>
+          <div class="match-detail-item-value">${match.confirmed ? "Confirmed" : "Pending"}</div>
+        </div>
+        <div class="match-detail-item">
+          <div class="match-detail-item-label">Messages</div>
+          <div class="match-detail-item-value">${match.messageCount}</div>
+        </div>
+        <div class="match-detail-item">
+          <div class="match-detail-item-label">Last Message</div>
+          <div class="match-detail-item-value">${lastMessageTime}</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="match-detail-section">
+      <div class="match-detail-section-title"><i class="fas fa-users"></i> User Profiles</div>
+      <div class="match-detail-users">
+        <div class="match-detail-user">
+          <div class="match-detail-user-header">
+            <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-detail-user-photo" onerror="this.src='images/default-avatar.png'">
+            <div class="match-detail-user-info">
+              <h3>${match.user1.name}</h3>
+              <p>${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</p>
+              <p>${match.user1.location || ""}</p>
+            </div>
+          </div>
+          <div class="match-detail-user-bio">
+            ${match.user1.bio || "No bio available"}
+          </div>
+          <div class="match-detail-user-interests">
+            ${createInterestsHTML(match.user1.interests)}
+          </div>
+        </div>
+        <div class="match-detail-user">
+          <div class="match-detail-user-header">
+            <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-detail-user-photo" onerror="this.src='images/default-avatar.png'">
+            <div class="match-detail-user-info">
+              <h3>${match.user2.name}</h3>
+              <p>${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</p>
+              <p>${match.user2.location || ""}</p>
+            </div>
+          </div>
+          <div class="match-detail-user-bio">
+            ${match.user2.bio || "No bio available"}
+          </div>
+          <div class="match-detail-user-interests">
+            ${createInterestsHTML(match.user2.interests)}
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+
+    // Show modal
+    modal.classList.add("active")
+  }
+
+  // Filter matches based on status
+  const filterMatches = () => {
+    const statusFilter = document.getElementById("match-status-filter").value
+    const cards = document.querySelectorAll(".match-card")
+
+    cards.forEach((card) => {
+      const status = card.getAttribute("data-status")
+
+      if (statusFilter === "all" || status === statusFilter) {
+        card.style.display = "block"
+      } else {
+        card.style.display = "none"
+      }
+    })
+
+    // Check if any cards are visible
+    checkVisibleCards()
+  }
+
+  // Sort matches
+  const sortMatches = () => {
+    const sortFilter = document.getElementById("match-sort-filter").value
+    const matchesGrid = document.getElementById("matches-grid")
+    const cards = Array.from(document.querySelectorAll(".match-card"))
+
+    // Sort cards based on selected filter
+    cards.sort((a, b) => {
+      if (sortFilter === "newest") {
+        return Number.parseInt(b.getAttribute("data-created")) - Number.parseInt(a.getAttribute("data-created"))
+      } else if (sortFilter === "oldest") {
+        return Number.parseInt(a.getAttribute("data-created")) - Number.parseInt(b.getAttribute("data-created"))
+      } else if (sortFilter === "messages") {
+        return Number.parseInt(b.getAttribute("data-messages")) - Number.parseInt(a.getAttribute("data-messages"))
+      }
+      return 0
+    })
+
+    // Re-append cards in sorted order
+    cards.forEach((card) => {
+      matchesGrid.appendChild(card)
+    })
+  }
+
+  // Check if any cards are visible after filtering
+  const checkVisibleCards = () => {
+    const visibleCards = document.querySelectorAll('.match-card[style="display: block"]')
+    const emptyState = document.getElementById("matches-empty")
+
+    if (visibleCards.length === 0) {
+      emptyState.style.display = "flex"
+      emptyState.innerHTML = `
+      <i class="fas fa-filter"></i>
+      <p>No matches found with the selected filters</p>
+    `
+    } else {
+      emptyState.style.display = "none"
+    }
+  }
+
   // Search matches
   const searchMatches = () => {
     const searchInput = document.getElementById("match-search")
@@ -2777,9 +3439,21 @@ const adminModule = (() => {
 
     cards.forEach((card) => {
       const user1Name = card.querySelector(".match-user:nth-child(1) .match-user-name").textContent.toLowerCase()
-      const user2Name = card.querySelector(".match-user:nth-child(2) .match-user-name").textContent.toLowerCase()
+      const user2Name = card.querySelector(".match-user:nth-child(3) .match-user-name").textContent.toLowerCase()
+      const user1Location = card
+        .querySelector(".match-user:nth-child(1) .match-user-location")
+        .textContent.toLowerCase()
+      const user2Location = card
+        .querySelector(".match-user:nth-child(3) .match-user-location")
+        .textContent.toLowerCase()
 
-      if (user1Name.includes(searchTerm) || user2Name.includes(searchTerm) || searchTerm === "") {
+      if (
+        user1Name.includes(searchTerm) ||
+        user2Name.includes(searchTerm) ||
+        user1Location.includes(searchTerm) ||
+        user2Location.includes(searchTerm) ||
+        searchTerm === ""
+      ) {
         card.style.display = "block"
         hasVisibleCards = true
       } else {
