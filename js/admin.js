@@ -703,6 +703,13 @@ const adminModule = (() => {
       font-size: 14px;
       margin-bottom: 5px;
     }
+
+    .match-user-location {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 3px;
+      font-style: italic;
+    }
     
     .match-user-id {
       color: #999;
@@ -2472,11 +2479,14 @@ const adminModule = (() => {
       document.getElementById("matches-grid").style.display = "none"
       document.getElementById("matches-empty").style.display = "none"
 
+      console.log("Starting to load matches...")
+
       // Get matches from Firestore
       const matchesSnapshot = await db.collection("matches").orderBy("timestamp", "desc").get()
 
       // Check if there are any matches
       if (matchesSnapshot.empty) {
+        console.log("No matches found in the database")
         document.getElementById("matches-loading").style.display = "none"
         document.getElementById("matches-empty").style.display = "flex"
         document.getElementById("matches-empty").innerHTML = `
@@ -2495,6 +2505,7 @@ const adminModule = (() => {
 
       matchesSnapshot.forEach((doc) => {
         const matchData = doc.data()
+        console.log(`Processing match ${doc.id}:`, matchData)
 
         // Check if the match has the expected structure
         if (!matchData.users || !Array.isArray(matchData.users) || matchData.users.length < 2) {
@@ -2525,24 +2536,46 @@ const adminModule = (() => {
         matchPromises.push(
           Promise.all([user1Promise, user2Promise, messagesPromise])
             .then(([user1Doc, user2Doc, messageCount]) => {
-              const user1Data = user1Doc.exists ? user1Doc.data() : { name: "Unknown User" }
-              const user2Data = user2Doc.exists ? user2Doc.data() : { name: "Unknown User" }
+              const user1Data = user1Doc.exists ? user1Doc.data() : { displayName: "Unknown User" }
+              const user2Data = user2Doc.exists ? user2Doc.data() : { displayName: "Unknown User" }
+
+              console.log(`User 1 data for match ${doc.id}:`, user1Data)
+              console.log(`User 2 data for match ${doc.id}:`, user2Data)
+
+              // Calculate age from birthDate
+              const calculateAge = (birthDateStr) => {
+                if (!birthDateStr) return ""
+                const birthDate = new Date(birthDateStr)
+                const today = new Date()
+                let age = today.getFullYear() - birthDate.getFullYear()
+                const monthDiff = today.getMonth() - birthDate.getMonth()
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--
+                }
+                return age
+              }
 
               matchesData.push({
                 id: doc.id,
                 user1: {
                   id: matchData.users[0],
-                  name: user1Data.name || "Unknown User",
-                  photoURL: user1Data.photoURL || "",
-                  age: user1Data.age || "",
+                  name: user1Data.displayName || "Unknown User",
+                  photoURL: user1Data.photos && user1Data.photos.length > 0 ? user1Data.photos[0] : "",
+                  age: calculateAge(user1Data.birthDate),
                   gender: user1Data.gender || "",
+                  location: user1Data.location || "",
+                  bio: user1Data.bio || "",
+                  interests: user1Data.interests || [],
                 },
                 user2: {
                   id: matchData.users[1],
-                  name: user2Data.name || "Unknown User",
-                  photoURL: user2Data.photoURL || "",
-                  age: user2Data.age || "",
+                  name: user2Data.displayName || "Unknown User",
+                  photoURL: user2Data.photos && user2Data.photos.length > 0 ? user2Data.photos[0] : "",
+                  age: calculateAge(user2Data.birthDate),
                   gender: user2Data.gender || "",
+                  location: user2Data.location || "",
+                  bio: user2Data.bio || "",
+                  interests: user2Data.interests || [],
                 },
                 createdAt: matchData.timestamp || null,
                 lastMessageAt: matchData.lastMessageTimestamp || null,
@@ -2625,6 +2658,12 @@ const adminModule = (() => {
       // Format match title
       const matchTitle = `${match.user1.name} and ${match.user2.name} are a match!`
 
+      // Format interests as comma-separated list
+      const formatInterests = (interests) => {
+        if (!interests || interests.length === 0) return "None"
+        return interests.join(", ")
+      }
+
       // Create match card HTML
       matchCard.innerHTML = `
       <div class="match-header">
@@ -2636,6 +2675,7 @@ const adminModule = (() => {
           <img src="${match.user1.photoURL || "images/default-avatar.png"}" alt="${match.user1.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
           <div class="match-user-name">${match.user1.name}</div>
           <div class="match-user-info">${match.user1.age ? match.user1.age + " years" : ""} ${match.user1.gender || ""}</div>
+          <div class="match-user-location">${match.user1.location || ""}</div>
           <div class="match-user-id">ID: ${match.user1.id}</div>
         </div>
         <div class="match-heart">
@@ -2645,6 +2685,7 @@ const adminModule = (() => {
           <img src="${match.user2.photoURL || "images/default-avatar.png"}" alt="${match.user2.name}" class="match-user-photo" onerror="this.src='images/default-avatar.png'">
           <div class="match-user-name">${match.user2.name}</div>
           <div class="match-user-info">${match.user2.age ? match.user2.age + " years" : ""} ${match.user2.gender || ""}</div>
+          <div class="match-user-location">${match.user2.location || ""}</div>
           <div class="match-user-id">ID: ${match.user2.id}</div>
         </div>
       </div>
@@ -2682,10 +2723,29 @@ const adminModule = (() => {
 
       if (viewBtn) {
         viewBtn.addEventListener("click", () => {
-          // In a real app, this would open a modal with match details
-          alert(
-            `Match Details:\n${matchTitle}\nCreated: ${timestamp}\nMessages: ${match.messageCount}\nStatus: ${match.confirmed ? "Confirmed" : "Pending"}`,
-          )
+          // Show detailed match information
+          const detailsHtml = `
+          <h3>${matchTitle}</h3>
+          <p><strong>Created:</strong> ${timestamp}</p>
+          <p><strong>Status:</strong> ${match.confirmed ? "Confirmed" : "Pending"}</p>
+          <p><strong>Messages:</strong> ${match.messageCount}</p>
+          
+          <h4>${match.user1.name}</h4>
+          <p><strong>Age:</strong> ${match.user1.age}</p>
+          <p><strong>Gender:</strong> ${match.user1.gender}</p>
+          <p><strong>Location:</strong> ${match.user1.location}</p>
+          <p><strong>Bio:</strong> ${match.user1.bio}</p>
+          <p><strong>Interests:</strong> ${formatInterests(match.user1.interests)}</p>
+          
+          <h4>${match.user2.name}</h4>
+          <p><strong>Age:</strong> ${match.user2.age}</p>
+          <p><strong>Gender:</strong> ${match.user2.gender}</p>
+          <p><strong>Location:</strong> ${match.user2.location}</p>
+          <p><strong>Bio:</strong> ${match.user2.bio}</p>
+          <p><strong>Interests:</strong> ${formatInterests(match.user2.interests)}</p>
+        `
+
+          alert(detailsHtml.replace(/<[^>]*>/g, ""))
         })
       }
 
